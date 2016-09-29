@@ -1,0 +1,17 @@
+machine:
+  pre:
+    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.1-circleci'
+    - sudo chmod 0755 /usr/bin/docker
+  services:
+    - docker
+
+dependencies:
+  override:
+    - free -m
+    - df -h
+    - docker build -t mystudy . 
+
+test:
+  override:
+    - docker run -ti --rm -e OPENMLKEY=$OPENMLKEY -v `pwd`:/notebooks mystudy bash -c
+        "cd /notebooks ; free -m ; jupyter nbconvert --to notebook --ExecutePreprocessor.timeout=-1 --execute AutomaticAnalysis.ipynb"
