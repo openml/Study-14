@@ -1,4 +1,6 @@
+import os
 import random
+import sys
 
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -13,23 +15,32 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
-from openml.utils.preprocessing import ConditionalImputer
+this_directory = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(this_directory, '..'))
+
+from openmlstudy14.preprocessing import ConditionalImputer
 
 
 CV_ITT = 3
 RS_ITT = 200
 
+
+def _get_preprocessors(nominal_indices):
+    return [('Imputer', ConditionalImputer(strategy='median',
+                                           fill_empty=0,
+                                           categorical_features=nominal_indices,
+                                           strategy_nominal='most_frequent')),
+            ('OneHotEncoder', OneHotEncoder(sparse=False,
+                                            handle_unknown='ignore',
+                                            categorical_features=nominal_indices)),
+            ('VarianceThreshold', VarianceThreshold())]
+
+
 def get_naive_bayes(nominal_indices):
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', GaussianNB())])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', GaussianNB())]
+    estimator = Pipeline(steps=steps)
     return estimator
+
 
 def get_decision_tree(nominal_indices):
     min_samples_split_range = [2 ** x for x in range(1, 7 + 1)]
@@ -39,16 +50,11 @@ def get_decision_tree(nominal_indices):
                   'min_samples_leaf': min_samples_leaf_range}
     grid_search = GridSearchCV(DecisionTreeClassifier(), param_dist, cv=CV_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', grid_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', grid_search)]
+    estimator = Pipeline(steps=steps)
+
     return estimator
+
 
 def get_svm(nominal_indices):
     param_range = [2 ** x for x in range(-12, 12 + 1)]
@@ -57,16 +63,10 @@ def get_svm(nominal_indices):
                   'gamma': param_range}
     random_search = RandomizedSearchCV(SVC(kernel='rbf'), param_dist, cv=CV_ITT, n_iter=RS_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', random_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', random_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
+
 
 def get_gradient_boosting(nominal_indices):
     learning_rate_range = [10 ** x for x in range(-4, -1 + 1)]
@@ -78,16 +78,10 @@ def get_gradient_boosting(nominal_indices):
                   'n_estimators': n_estimators_range}
     random_search = RandomizedSearchCV(GradientBoostingClassifier(), param_dist, cv=CV_ITT, n_iter=RS_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', random_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', random_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
+
 
 def get_knn(nominal_indices):
     n_neighbours_range = list(range(1, 50 + 1))
@@ -95,15 +89,8 @@ def get_knn(nominal_indices):
     param_dist = {'n_neighbors': n_neighbours_range}
     grid_search = GridSearchCV(NearestNeighbors(), param_dist, cv=CV_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', grid_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', grid_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
 
 
@@ -121,15 +108,8 @@ def get_mlp(nominal_indices):
                   'momentum': momentum_range}
     random_search = RandomizedSearchCV(MLPClassifier(), param_dist, cv=CV_ITT, n_iter=RS_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', random_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', random_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
 
 def get_logistic_regression(nominal_indices):
@@ -138,15 +118,8 @@ def get_logistic_regression(nominal_indices):
     param_dist = {'C': C_range}
     grid_search = GridSearchCV(LogisticRegression(), param_dist, cv=CV_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', grid_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', grid_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
 
 def get_random_forest(nominal_indices):
@@ -155,15 +128,8 @@ def get_random_forest(nominal_indices):
     param_dist = {'max_features': max_features_range}
     grid_search = GridSearchCV(RandomForestClassifier(n_estimators=500), param_dist, cv=CV_ITT)
 
-    estimator = Pipeline(steps=[('Imputer', ConditionalImputer(strategy='median',
-                                                               empty_attribute_constant=0,
-                                                               categorical_features=nominal_indices,
-                                                               strategy_nominal='most_frequent')),
-                                ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                                handle_unknown='ignore',
-                                                                categorical_features=nominal_indices)),
-                                ('VarianceThreshold', VarianceThreshold()),
-                                ('Estimator', grid_search)])
+    steps = _get_preprocessors(nominal_indices) + [('Estimator', grid_search)]
+    estimator = Pipeline(steps=steps)
     return estimator
 
 
