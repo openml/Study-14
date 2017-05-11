@@ -226,5 +226,4 @@ class ConditionalImputer(Imputer):
 
             X[coordinates] = values
 
-
-return X
+        return X
