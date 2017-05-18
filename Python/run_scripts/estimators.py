@@ -61,7 +61,7 @@ def get_svm(nominal_indices):
 
     param_dist = {'C': param_range,
                   'gamma': param_range}
-    random_search = RandomizedSearchCV(SVC(kernel='rbf'), param_dist, cv=CV_ITT, n_iter=RS_ITT)
+    random_search = RandomizedSearchCV(SVC(kernel='rbf',probability=True), param_dist, cv=CV_ITT, n_iter=RS_ITT)
 
     steps = _get_preprocessors(nominal_indices) + [('Estimator', random_search)]
     estimator = Pipeline(steps=steps)
@@ -137,4 +137,5 @@ def get_random_estimator(nominal_indices):
     estimators = [get_naive_bayes, get_decision_tree, get_logistic_regression, get_gradient_boosting,
                   get_svm, get_random_forest, get_mlp, get_knn]
     estimator = random.choice(estimators)
+    print("invoked estimator with %s" %str(estimator))
     return estimator(nominal_indices)
