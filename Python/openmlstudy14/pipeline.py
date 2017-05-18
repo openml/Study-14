@@ -18,8 +18,8 @@ from sklearn.ensemble import RandomForestClassifier
 this_directory = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(this_directory, '..'))
 
-from .distributions import loguniform, loguniform_int
-from .preprocessing import ConditionalImputer
+from openmlstudy14.distributions import loguniform, loguniform_int
+from openmlstudy14.preprocessing import ConditionalImputer
 
 
 CV_ITT = 3
