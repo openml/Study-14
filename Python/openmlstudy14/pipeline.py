@@ -21,9 +21,17 @@ sys.path.append(os.path.join(this_directory, '..'))
 from openmlstudy14.distributions import loguniform, loguniform_int
 from openmlstudy14.preprocessing import ConditionalImputer
 
-
-CV_ITT = 3
-RS_ITT = 200
+scoring='accuracy'
+error_score=0.0
+CV_ITT=3
+RS_ITT=20
+grid_arguments = dict(scoring='accuracy',
+                     error_score=error_score,
+                     cv=CV_ITT)
+rs_arguments = dict(scoring='accuracy',
+                    error_score=error_score,
+                    cv=CV_ITT,
+                    n_iter=RS_ITT)
 
 
 def _get_pipeline(nominal_indices, sklearn_model):
@@ -49,8 +57,7 @@ def get_decision_tree(nominal_indices):
     decision_tree = _get_pipeline(nominal_indices, DecisionTreeClassifier())
     random_search = RandomizedSearchCV(decision_tree,
                                        param_dist,
-                                       cv=CV_ITT,
-                                       n_iter=RS_ITT)
+                                       **rs_arguments)
     return random_search
 
 
@@ -60,8 +67,7 @@ def get_svm(nominal_indices):
     svm = _get_pipeline(nominal_indices, SVC(kernel='rbf',probability=True))
     random_search = RandomizedSearchCV(svm,
                                        param_dist,
-                                       cv=CV_ITT,
-                                       n_iter=RS_ITT)
+                                       **rs_arguments)
     return random_search
 
 
@@ -72,8 +78,7 @@ def get_gradient_boosting(nominal_indices):
     boosting = _get_pipeline(nominal_indices, GradientBoostingClassifier())
     random_search = RandomizedSearchCV(boosting,
                                        param_dist,
-                                       cv=CV_ITT,
-                                       n_iter=RS_ITT)
+                                       **rs_arguments)
     return random_search
 
 
@@ -81,7 +86,7 @@ def get_knn(nominal_indices):
 
     param_dist = {'n_neighbors': list(range(1, 50 + 1))}
     knn = _get_pipeline(nominal_indices, NearestNeighbors())
-    grid_search = GridSearchCV(knn, param_dist, cv=CV_ITT)
+    grid_search = GridSearchCV(knn, param_dist, **grid_arguments)
     return grid_search
 
 
@@ -92,19 +97,19 @@ def get_mlp(nominal_indices):
                   'max_iter': loguniform_int(base=2, low=2**1, high=2**11),
                   'momentum': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
     mlp = _get_pipeline(nominal_indices, MLPClassifier())
-    random_search = RandomizedSearchCV(mlp, param_dist, cv=CV_ITT, n_iter=RS_ITT)
+    random_search = RandomizedSearchCV(mlp, param_dist, **rs_arguments)
     return random_search
 
 def get_logistic_regression(nominal_indices):
     param_dist = {'C': loguniform(base=2, low=2**-12, high=2**12)}
     logreg = _get_pipeline(nominal_indices, LogisticRegression())
-    random_search = RandomizedSearchCV(logreg, param_dist, cv=CV_ITT, n_iter=RS_ITT)
+    random_search = RandomizedSearchCV(logreg, param_dist, **rs_arguments)
     return random_search
 
 def get_random_forest(nominal_indices):
     param_dist = {'max_features': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
     randomforest = _get_pipeline(nominal_indices, RandomForestClassifier(n_estimators=500))
-    grid_search = GridSearchCV(randomforest, param_dist, cv=CV_ITT)
+    grid_search = GridSearchCV(randomforest, param_dist, **grid_arguments)
     return grid_search
 
 

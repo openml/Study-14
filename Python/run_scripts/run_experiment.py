@@ -18,10 +18,7 @@ estimator = get_random_estimator(indices)
 
 flow = flows.sklearn_to_flow(estimator)
 
-try:
-    run = runs.run_flow_on_task(task, flow, flow_tags=['study_14'])
-    run.tags.append('study_14')
-    run.publish()
-    print('Run uploaded with id %d' %run.run_id)
-except Exception as e:
-    print('Error: %s' %str(e))
+run = runs.run_flow_on_task(task, flow, flow_tags=['study_14'])
+run.tags.append('study_14')
+run.publish()
+print('Run uploaded with id %d' %run.run_id)
