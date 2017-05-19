@@ -1,19 +1,8 @@
 import argparse
-import os
-import pickle
-
-# Necessary to use dask parallel
-import distributed.joblib
-from distributed import Executor
-import numpy as np
-import sklearn.externals.joblib
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
-import scipy.sparse
-
 import openml
-import openml.tasks
-
 import openmlstudy14.pipeline
+
+import sklearn.externals.joblib
 
 
 def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
