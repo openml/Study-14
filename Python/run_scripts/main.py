@@ -16,17 +16,17 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
     # retrieve classifier
     classifierfactory = openmlstudy14.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)
     if classifier == 'SVC':
-        estimator = classifierfactory.get_SVM(indices)
+        estimator = classifierfactory.get_svm(indices)
     elif classifier == 'DecisionTreeClassifier':
         estimator = classifierfactory.get_decision_tree(indices)
     elif classifier == 'GradientBoostingClassifier':
         estimator = classifierfactory.get_gradient_boosting(indices)
     elif classifier == 'KNeighborsClassifier':
-        estimator = classifierfactory.get_kNN(indices)
+        estimator = classifierfactory.get_knn(indices)
     elif classifier == 'NaiveBayes':
         estimator = classifierfactory.get_naive_bayes(indices)
     elif classifier == 'MLPClassifier':
-        estimator = classifierfactory.get_neural_network(indices)
+        estimator = classifierfactory.get_mlp(indices)
     elif classifier == 'LogisticRegression':
         estimator = classifierfactory.get_logistic_regression(indices)
     elif classifier == 'RandomForestClassifier':
@@ -50,13 +50,13 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', module='sklearn\.externals\.joblib\.parallel')
-            run = openml.runs.run_flow_on_task(task, flow)
+            run = openml.runs.run_flow_on_task(task, flow, seed=seed)
     else:
         # Register with scikit-leran joblib since scikit-learn uses the builtin
         # version to distribute it's work
         print('Using dask parallel with host %s' % scheduler_host)
         with sklearn.externals.joblib.parallel_backend('distributed', scheduler_host=scheduler_host):
-            run = openml.runs.run_flow_on_task(task, flow)
+            run = openml.runs.run_flow_on_task(task, flow, seed=seed)
 
     end_time = time.time()
     run_prime = run.publish()
@@ -72,12 +72,12 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--classifier', required=True,
-                        choices=['SVC', 'DecisionTreeClassifier',
-                                 'GradientBoostingClassifier',
-                                 'KNeighborsClassifier', 'NaiveBayes',
-                                 'MLPClassifier',
-                                 'LogisticRegression', 'RandomForestClassifier'])
+    supported_classifiers = ['SVC', 'DecisionTreeClassifier',
+                             'GradientBoostingClassifier',
+                             'KNeighborsClassifier', 'NaiveBayes',
+                             'MLPClassifier',
+                             'LogisticRegression', 'RandomForestClassifier']
+    parser.add_argument('--classifier', choices=supported_classifiers)
     parser.add_argument('--seed', required=True, type=int)
     parser.add_argument('--task_id', required=True, type=int)
     parser.add_argument('--tmp_dir', required=True, type=str)
@@ -106,12 +106,24 @@ if __name__ == '__main__':
     task_id = args.task_id
     scheduler_host = args.scheduler_host
 
-    run = run_task(seed=seed,
-                   tmp_dir=tmp_dir,
-                   task_id=task_id,
-                   estimator_name=classifier,
-                   n_iter=n_iter_random_search,
-                   n_jobs=n_jobs,
-                   n_folds_inner_cv=n_folds_inner_cv,
-                   scheduler_host=scheduler_host)
-    print(run)
+    if classifier is None:
+        for classifier in supported_classifiers:
+            run = run_task(seed=seed,
+                           tmp_dir=tmp_dir,
+                           task_id=task_id,
+                           estimator_name=classifier,
+                           n_iter=n_iter_random_search,
+                           n_jobs=n_jobs,
+                           n_folds_inner_cv=n_folds_inner_cv,
+                           scheduler_host=scheduler_host)
+            print(run)
+    else:
+        run = run_task(seed=seed,
+                       tmp_dir=tmp_dir,
+                       task_id=task_id,
+                       estimator_name=classifier,
+                       n_iter=n_iter_random_search,
+                       n_jobs=n_jobs,
+                       n_folds_inner_cv=n_folds_inner_cv,
+                       scheduler_host=scheduler_host)
+        print(run)

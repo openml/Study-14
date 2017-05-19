@@ -1,4 +1,5 @@
 import random
+import scipy
 
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -82,8 +83,8 @@ class EstimatorFactory():
 
     def get_gradient_boosting(self, nominal_indices):
         param_dist = {'Estimator__learning_rate': loguniform(base=10, low=2**-4, high=2**-1),
-                      'Estimator__max_depth': list(range(1, 5 + 1)),
-                      'Estimator__n_estimators': list(range(500, 1000 + 1))}
+                      'Estimator__max_depth': scipy.stats.randint(1, 5 + 1),
+                      'Estimator__n_estimators': scipy.stats.randint(500, 1001)}
         boosting = self._get_pipeline(nominal_indices, GradientBoostingClassifier())
         random_search = RandomizedSearchCV(boosting,
                                            param_dist,
@@ -92,7 +93,7 @@ class EstimatorFactory():
 
 
     def get_knn(self, nominal_indices):
-        param_dist = {'Estimator__n_neighbors': list(range(1, 50 + 1))}
+        param_dist = {'Estimator__n_neighbors': scipy.stats.randint(1, 51)}
         knn = self._get_pipeline(nominal_indices, KNeighborsClassifier())
         grid_search = GridSearchCV(knn, param_dist, **self.grid_arguments)
         return grid_search
@@ -102,9 +103,9 @@ class EstimatorFactory():
         param_dist = {'Estimator__hidden_layer_sizes': loguniform_int(base=2, low=2**5, high=2**11),
                       'Estimator__learning_rate_init': loguniform(base=10, low=2**-5, high=2**0),
                       'Estimator__alpha': loguniform(base=10, low=2**-7, high=2**-4),
-                      'Estimator__max_iter': loguniform_int(base=2, low=2**1, high=2**11),
-                      'Estimator__momentum': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
-        mlp = self._get_pipeline(nominal_indices, MLPClassifier())
+                      'Estimator__max_iter': scipy.stats.randint(2, 1001),
+                      'Estimator__momentum': scipy.stats.uniform(loc=0.1, scale=0.8)}
+        mlp = self._get_pipeline(nominal_indices, MLPClassifier(activation='tanh', solver='adam'))
         random_search = RandomizedSearchCV(mlp, param_dist, **self.rs_arguments)
         return random_search
 
@@ -117,7 +118,7 @@ class EstimatorFactory():
 
 
     def get_random_forest(self, nominal_indices):
-        param_dist = {'Estimator__max_features': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
+        param_dist = {'Estimator__max_features': scipy.stats.uniform(loc=0.1, scale=0.8)}
         randomforest = self._get_pipeline(nominal_indices, RandomForestClassifier(n_estimators=500))
         grid_search = GridSearchCV(randomforest, param_dist, **self.grid_arguments)
         return grid_search
