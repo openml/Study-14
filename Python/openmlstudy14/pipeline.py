@@ -42,6 +42,16 @@ class EstimatorFactory():
                                self.get_mlp,
                                self.get_knn]
 
+        self.estimator_mapping = {'naive_bayes': self.get_naive_bayes,
+                                  'decision_tree': self.get_decision_tree,
+                                  'logreg':
+                                      self.get_logistic_regression,
+                                  'gradient_boosting':
+                                      self.get_gradient_boosting,
+                                  'svm': self.get_svm,
+                                  'random_forest': self.get_random_forest,
+                                  'mlp': self.get_mlp,
+                                  'knn': self.get_knn}
 
     @staticmethod
     def _get_pipeline(nominal_indices, sklearn_model):
@@ -131,3 +141,6 @@ class EstimatorFactory():
 
     def get_all_flows(self, nominal_indices):
         return [estimator(nominal_indices) for estimator in self.all_estimators]
+
+    def get_flow_mapping(self):
+        return self.estimator_mapping

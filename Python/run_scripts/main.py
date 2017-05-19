@@ -1,13 +1,18 @@
 import argparse
+import time
+
+import yaml
 import openml
 import openmlstudy14.pipeline
 
+# Necessary to register the backend with joblib!
+import distributed.joblib
 import sklearn.externals.joblib
 
 
-def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
-             n_folds_inner_cv, scheduler_host):
 
+def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
+             scheduler_file):
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
@@ -15,24 +20,7 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
 
     # retrieve classifier
     classifierfactory = openmlstudy14.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)
-    if classifier == 'SVC':
-        estimator = classifierfactory.get_svm(indices)
-    elif classifier == 'DecisionTreeClassifier':
-        estimator = classifierfactory.get_decision_tree(indices)
-    elif classifier == 'GradientBoostingClassifier':
-        estimator = classifierfactory.get_gradient_boosting(indices)
-    elif classifier == 'KNeighborsClassifier':
-        estimator = classifierfactory.get_knn(indices)
-    elif classifier == 'NaiveBayes':
-        estimator = classifierfactory.get_naive_bayes(indices)
-    elif classifier == 'MLPClassifier':
-        estimator = classifierfactory.get_mlp(indices)
-    elif classifier == 'LogisticRegression':
-        estimator = classifierfactory.get_logistic_regression(indices)
-    elif classifier == 'RandomForestClassifier':
-        estimator = classifierfactory.get_random_forest(indices)
-    else:
-        raise ValueError('Unknown classifier %s.' % args.classifier)
+    estimator = classifierfactory.get_flow_mapping()[estimator_name](indices)
 
     print('Running task with ID %d.' % task_id)
     print('Arguments: random search iterations: %d, inner CV folds %d, '
@@ -44,43 +32,48 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
     import time
     start_time = time.time()
 
-
     # TODO generate a flow first
-    if scheduler_host is None:
+    if scheduler_file is None:
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', module='sklearn\.externals\.joblib\.parallel')
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
     else:
-        # Register with scikit-leran joblib since scikit-learn uses the builtin
-        # version to distribute it's work
-        print('Using dask parallel with host %s' % scheduler_host)
-        with sklearn.externals.joblib.parallel_backend('distributed', scheduler_host=scheduler_host):
+        print('Using dask parallel with scheduler file %s' % scheduler_file)
+
+        scheduler_host = None
+        for i in range(1000):
+            try:
+                with open(scheduler_file) as fh:
+                    scheduler_information = yaml.load(fh)
+                scheduler_host = scheduler_information['address']
+            except FileNotFoundError:
+                print('scheduler file %s not found. sleeping ... zzz' % scheduler_file)
+                time.sleep(1)
+
+        if scheduler_host is None:
+            raise ValueError('Could not read scheduler_host file!')
+
+        with sklearn.externals.joblib.parallel_backend('distributed',
+                                                       scheduler_host=scheduler_host):
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
 
     end_time = time.time()
     run_prime = run.publish()
     print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
 
-    # TODO: why do we need this? it crashes on
-    # AttributeError: Can't pickle local object '_run_task_get_arffcontent.<locals>.<lambda>'
-    # output_file = os.path.join(tmp_dir, '%d_%s_%d.pkl' % (task_id, estimator_name, seed))
-    # with open(output_file, 'wb') as fh:
-    #     pickle.dump(run, fh)
     return run
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    supported_classifiers = ['SVC', 'DecisionTreeClassifier',
-                             'GradientBoostingClassifier',
-                             'KNeighborsClassifier', 'NaiveBayes',
-                             'MLPClassifier',
-                             'LogisticRegression', 'RandomForestClassifier']
-    parser.add_argument('--classifier', choices=supported_classifiers)
+    supported_classifiers = ['svm', 'decision_tree', 'gradient_boosting',
+                             'knn', 'naive_bayes', 'mlp', 'logreg',
+                             'random_forest']
+    parser.add_argument('--classifier', choices=supported_classifiers,
+                        required=True)
     parser.add_argument('--seed', required=True, type=int)
     parser.add_argument('--task_id', required=True, type=int)
-    parser.add_argument('--tmp_dir', required=True, type=str)
     parser.add_argument('--n_iter_inner_loop', default=200, type=int,
                         help='Number of iterations random search.')
     parser.add_argument('--n_folds_inner_cv', default=3, type=int,
@@ -89,41 +82,31 @@ if __name__ == '__main__':
                         help='Number of cores used by random search. Defaults '
                              'to all (-1).')
     parser.add_argument('--openml_server', default=openml.config.server)
-    parser.add_argument('--scheduler_host', default=None, type=str,
+    parser.add_argument('--cache_dir', default=openml.config.cachedir)
+    parser.add_argument('--scheduler_file', default=None, type=str,
                         help='Use distributed backend if specified')
 
     args = parser.parse_args()
 
     openml_server = args.openml_server
     openml.config.server = openml_server
+    cache_dir = args.cache_dir
+    openml.config.set_cache_directory(cache_dir)
 
     seed = args.seed
-    tmp_dir = args.tmp_dir
     classifier = args.classifier
     n_iter_random_search = args.n_iter_inner_loop
     n_folds_inner_cv = args.n_folds_inner_cv
     n_jobs = args.n_jobs
     task_id = args.task_id
-    scheduler_host = args.scheduler_host
+    scheduler_file = args.scheduler_file
 
-    if classifier is None:
-        for classifier in supported_classifiers:
-            run = run_task(seed=seed,
-                           tmp_dir=tmp_dir,
-                           task_id=task_id,
-                           estimator_name=classifier,
-                           n_iter=n_iter_random_search,
-                           n_jobs=n_jobs,
-                           n_folds_inner_cv=n_folds_inner_cv,
-                           scheduler_host=scheduler_host)
-            print(run)
-    else:
-        run = run_task(seed=seed,
-                       tmp_dir=tmp_dir,
-                       task_id=task_id,
-                       estimator_name=classifier,
-                       n_iter=n_iter_random_search,
-                       n_jobs=n_jobs,
-                       n_folds_inner_cv=n_folds_inner_cv,
-                       scheduler_host=scheduler_host)
-        print(run)
+
+    run = run_task(seed=seed,
+                   task_id=task_id,
+                   estimator_name=classifier,
+                   n_iter=n_iter_random_search,
+                   n_jobs=n_jobs,
+                   n_folds_inner_cv=n_folds_inner_cv,
+                   scheduler_file=scheduler_file)
+    print(run)
