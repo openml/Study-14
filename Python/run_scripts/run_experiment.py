@@ -14,8 +14,7 @@ dataset = task.get_dataset()
 
 # TODO: indexing should not be part of setup
 indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
-estimator = openmlstudy14.pipeline.get_decision_tree(indices)
-
+estimator = openmlstudy14.pipeline.get_random_estimator(indices)
 flow = flows.sklearn_to_flow(estimator)
 
 run = runs.run_flow_on_task(task, flow, flow_tags=['study_14'])

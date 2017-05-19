@@ -52,8 +52,8 @@ def get_naive_bayes(nominal_indices):
 
 
 def get_decision_tree(nominal_indices):
-    param_dist = {'estimator__Estimator__min_samples_split': loguniform_int(base=2, low=2**1, high=2**7),
-                  'estimator__Estimator__min_samples_leaf': loguniform_int(base=2, low=2**0, high=2**6)}
+    param_dist = {'Estimator__min_samples_split': loguniform_int(base=2, low=2**1, high=2**7),
+                  'Estimator__min_samples_leaf': loguniform_int(base=2, low=2**0, high=2**6)}
     decision_tree = _get_pipeline(nominal_indices, DecisionTreeClassifier())
     random_search = RandomizedSearchCV(decision_tree,
                                        param_dist,
@@ -62,8 +62,8 @@ def get_decision_tree(nominal_indices):
 
 
 def get_svm(nominal_indices):
-    param_dist = {'estimator__Estimator__C': loguniform(base=2, low=2**-12, high=2**12),
-                  'estimator__Estimator__gamma': loguniform(base=2, low=2**-12, high=2**12)}
+    param_dist = {'Estimator__C': loguniform(base=2, low=2**-12, high=2**12),
+                  'Estimator__gamma': loguniform(base=2, low=2**-12, high=2**12)}
     svm = _get_pipeline(nominal_indices, SVC(kernel='rbf',probability=True))
     random_search = RandomizedSearchCV(svm,
                                        param_dist,
@@ -72,9 +72,9 @@ def get_svm(nominal_indices):
 
 
 def get_gradient_boosting(nominal_indices):
-    param_dist = {'estimator__Estimator__learning_rate': loguniform(base=10, low=2**-4, high=2**-1),
-                  'estimator__Estimator__max_depth': list(range(1, 5 + 1)),
-                  'estimator__Estimator__n_estimators': list(range(500, 1000 + 1))}
+    param_dist = {'Estimator__learning_rate': loguniform(base=10, low=2**-4, high=2**-1),
+                  'Estimator__max_depth': list(range(1, 5 + 1)),
+                  'Estimator__n_estimators': list(range(500, 1000 + 1))}
     boosting = _get_pipeline(nominal_indices, GradientBoostingClassifier())
     random_search = RandomizedSearchCV(boosting,
                                        param_dist,
@@ -84,30 +84,30 @@ def get_gradient_boosting(nominal_indices):
 
 def get_knn(nominal_indices):
 
-    param_dist = {'estimator__Estimator__n_neighbors': list(range(1, 50 + 1))}
+    param_dist = {'Estimator__n_neighbors': list(range(1, 50 + 1))}
     knn = _get_pipeline(nominal_indices, NearestNeighbors())
     grid_search = GridSearchCV(knn, param_dist, **grid_arguments)
     return grid_search
 
 
 def get_mlp(nominal_indices):
-    param_dist = {'estimator__Estimator__hidden_layer_sizes': loguniform_int(base=2, low=2**5, high=2**11),
-                  'estimator__Estimator__learning_rate_init': loguniform(base=10, low=2**-5, high=2**0),
-                  'estimator__Estimator__alpha': loguniform(base=10, low=2**-7, high=2**-4),
-                  'estimator__Estimator__max_iter': loguniform_int(base=2, low=2**1, high=2**11),
-                  'estimator__Estimator__momentum': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
+    param_dist = {'Estimator__hidden_layer_sizes': loguniform_int(base=2, low=2**5, high=2**11),
+                  'Estimator__learning_rate_init': loguniform(base=10, low=2**-5, high=2**0),
+                  'Estimator__alpha': loguniform(base=10, low=2**-7, high=2**-4),
+                  'Estimator__max_iter': loguniform_int(base=2, low=2**1, high=2**11),
+                  'Estimator__momentum': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
     mlp = _get_pipeline(nominal_indices, MLPClassifier())
     random_search = RandomizedSearchCV(mlp, param_dist, **rs_arguments)
     return random_search
 
 def get_logistic_regression(nominal_indices):
-    param_dist = {'estimator__Estimator__C': loguniform(base=2, low=2**-12, high=2**12)}
+    param_dist = {'Estimator__C': loguniform(base=2, low=2**-12, high=2**12)}
     logreg = _get_pipeline(nominal_indices, LogisticRegression())
     random_search = RandomizedSearchCV(logreg, param_dist, **rs_arguments)
     return random_search
 
 def get_random_forest(nominal_indices):
-    param_dist = {'estimator__Estimator__max_features': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
+    param_dist = {'Estimator__max_features': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}
     randomforest = _get_pipeline(nominal_indices, RandomForestClassifier(n_estimators=500))
     grid_search = GridSearchCV(randomforest, param_dist, **grid_arguments)
     return grid_search
