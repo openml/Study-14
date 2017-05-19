@@ -93,7 +93,7 @@ class EstimatorFactory():
 
 
     def get_knn(self, nominal_indices):
-        param_dist = {'Estimator__n_neighbors': scipy.stats.randint(1, 51)}
+        param_dist = {'Estimator__n_neighbors': list(range(1, 50 + 1))}
         knn = self._get_pipeline(nominal_indices, KNeighborsClassifier())
         grid_search = GridSearchCV(knn, param_dist, **self.grid_arguments)
         return grid_search
@@ -120,7 +120,7 @@ class EstimatorFactory():
     def get_random_forest(self, nominal_indices):
         param_dist = {'Estimator__max_features': scipy.stats.uniform(loc=0.1, scale=0.8)}
         randomforest = self._get_pipeline(nominal_indices, RandomForestClassifier(n_estimators=500))
-        grid_search = GridSearchCV(randomforest, param_dist, **self.grid_arguments)
+        grid_search = RandomizedSearchCV(randomforest, param_dist, **self.rs_arguments)
         return grid_search
 
 
