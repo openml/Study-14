@@ -70,8 +70,8 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
             run = openml.runs.run_flow_on_task(task, flow)
 
     end_time = time.time()
-    run = run.publish()
-    print('READTHIS', estimator_name, task_id, run.run_id, end_time-start_time)
+    run_prime = run.publish()
+    print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
 
     # TODO: why do we need this? it crashes on
     # AttributeError: Can't pickle local object '_run_task_get_arffcontent.<locals>.<lambda>'
