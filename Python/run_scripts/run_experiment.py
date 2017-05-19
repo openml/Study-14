@@ -1,6 +1,6 @@
 import random
 
-from openmlstudy14.pipeline import get_random_estimator
+import openmlstudy14.pipeline
 
 from openml import tasks,runs, flows
 
@@ -14,7 +14,7 @@ dataset = task.get_dataset()
 
 # TODO: indexing should not be part of setup
 indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
-estimator = get_random_estimator(indices)
+estimator = openmlstudy14.pipeline.get_decision_tree(indices)
 
 flow = flows.sklearn_to_flow(estimator)
 
