@@ -1,8 +1,5 @@
-
-
-import openmlstudy14.pipeline
-
 import openml
+import openmlstudy14.pipeline
 
 openml.config.server = "https://test.openml.org/api/v1/"
 
@@ -16,14 +13,14 @@ dataset = task.get_dataset()
 
 # TODO: indexing should not be part of setup
 indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
-factory = openmlstudy14.pipeline.EstimatorFactory()
+factory = openmlstudy14.pipeline.EstimatorFactory(3, 20, 1)
 
 estimators = factory.get_all_flows(indices)
 
 for estimator in estimators:
     flow = openml.flows.sklearn_to_flow(estimator)
-
-    run = openml.runs.run_flow_on_task(task, flow, flow_tags=['study_14'])
+    flow.tags.append('study_14')
+    run = openml.runs.run_flow_on_task(task, flow)
     run.tags.append('study_14')
     run.publish()
-    print('Run uploaded with id %d' %run.run_id)
+    print('Flow %s Task %d uploaded with id %d' %(flow.name, task_id, run.run_id))

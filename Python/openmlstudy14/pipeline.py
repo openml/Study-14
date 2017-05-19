@@ -1,6 +1,4 @@
-import os
 import random
-import sys
 
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -21,18 +19,18 @@ from openmlstudy14.preprocessing import ConditionalImputer
 
 class EstimatorFactory():
 
-    def __init__(self):
+    def __init__(self, n_folds_inner_cv=3, n_iter=200, n_jobs=-1):
         scoring = 'accuracy'
         error_score = 0.0
-        CV_ITT = 3
-        RS_ITT = 20
         self.grid_arguments = dict(scoring=scoring,
-                              error_score=error_score,
-                              cv=CV_ITT)
+                                   error_score=error_score,
+                                   cv=n_folds_inner_cv,
+                                   n_jobs=n_jobs)
         self.rs_arguments = dict(scoring=scoring,
                                  error_score=error_score,
-                                 cv=CV_ITT,
-                                 n_iter=RS_ITT)
+                                 cv=n_folds_inner_cv,
+                                 n_iter=n_iter,
+                                 n_jobs=n_jobs)
 
         self.all_estimators = [self.get_naive_bayes,
                                self.get_decision_tree,

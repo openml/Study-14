@@ -13,151 +13,76 @@ import scipy.sparse
 import openml
 import openml.tasks
 
-import openml2016.pipeline as pipeline
-import openml2016.util as util
+import openmlstudy14.pipeline
 
 
 def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
              n_folds_inner_cv, scheduler_host):
 
+
+    # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
+    indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
 
-    # Inform the OneHotEncoder about categorical features, use feature
-    # indices instead of boolean mask because of a more compact string
-    # representation
-    dataset = task.get_dataset()
-    X, _, categorical_indicator = dataset.get_data(
-        target=task.target_name, return_categorical_indicator=True)
-
-    categorical_indicator = np.array(categorical_indicator)
-    categorical_features = [int(x) for x in np.where(categorical_indicator)[0]]
-    numerical_features = [int(x) for x in np.where(~categorical_indicator)[0]]
-
-    print('Categorical features', categorical_features)
-    print('Numerical features', numerical_features)
-
-    assert len(categorical_features + numerical_features) == X.shape[1]
-    assert len(np.unique(categorical_features + numerical_features)) == X.shape[1]
-
-    if len(categorical_features) > 0 and len(numerical_features) > 0:
-        version = 'mixed'
-    elif len(categorical_features) == 0:
-        version = 'numerical'
-    elif len(numerical_features) == 0:
-        version = 'categorical'
-    else:
-        raise Exception()
-
-    num_features = X.shape[0]
-
-    if estimator_name == 'SVC':
-        param_dist, clf = pipeline.get_SVM(version)
-    elif estimator_name == 'DecisionTreeClassifier':
-        param_dist, clf = pipeline.get_decision_tree(version)
-    elif estimator_name == 'GradientBoostingClassifier':
-        param_dist, clf = pipeline.get_gradient_boosting(version)
-    elif estimator_name == 'KNeighborsClassifier':
-        param_dist, clf = pipeline.get_kNN(version)
-    elif estimator_name == 'NaiveBayes':
-        param_dist, clf = pipeline.get_naive_bayes(version)
-    elif estimator_name == 'MLPClassifier':
-        param_dist, clf = pipeline.get_neural_network(version)
-    elif estimator_name == 'LogisticRegression':
-        param_dist, clf = pipeline.get_logistic_regression(version)
-    elif estimator_name == 'RandomForestClassifier':
-        param_dist, clf = pipeline.get_random_forest(version, num_features)
+    # retrieve classifier
+    classifierfactory = openmlstudy14.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)
+    if classifier == 'SVC':
+        estimator = classifierfactory.get_SVM(indices)
+    elif classifier == 'DecisionTreeClassifier':
+        estimator = classifierfactory.get_decision_tree(indices)
+    elif classifier == 'GradientBoostingClassifier':
+        estimator = classifierfactory.get_gradient_boosting(indices)
+    elif classifier == 'KNeighborsClassifier':
+        estimator = classifierfactory.get_kNN(indices)
+    elif classifier == 'NaiveBayes':
+        estimator = classifierfactory.get_naive_bayes(indices)
+    elif classifier == 'MLPClassifier':
+        estimator = classifierfactory.get_neural_network(indices)
+    elif classifier == 'LogisticRegression':
+        estimator = classifierfactory.get_logistic_regression(indices)
+    elif classifier == 'RandomForestClassifier':
+        estimator = classifierfactory.get_random_forest(indices)
     else:
         raise ValueError('Unknown classifier %s.' % args.classifier)
 
-    kfold = StratifiedKFold(n_splits=n_folds_inner_cv, shuffle=True,
-                            random_state=1)
-
-    if scipy.sparse.isspmatrix(X) or np.sum(categorical_features) > 0:
-        standard_scaler_center = False
-    else:
-        standard_scaler_center = True
-
-    if n_iter > 0:
-        estimator = RandomizedSearchCV(estimator=clf,
-                                       param_distributions=param_dist,
-                                       n_iter=n_iter,
-                                       n_jobs=n_jobs,
-                                       pre_dispatch='2*n_jobs',
-                                       iid=True,
-                                       cv=kfold,
-                                       refit=True,
-                                       verbose=10,
-                                       random_state=1,
-                                       error_score=0.0)
-
-        if len(categorical_features) != 0 and len(numerical_features) != 0:
-            estimator.set_params(
-                estimator__FeatureUnion__numerical__ItemSelector__indices=
-                categorical_features)
-            estimator.set_params(
-                estimator__FeatureUnion__numerical__ItemSelector__indices=
-                numerical_features)
-
-        if not standard_scaler_center and 'estimator__scaler' in \
-                estimator.get_params():
-            estimator.set_params(estimator__scaler__with_mean=False)
-
-        print([item for item in estimator.get_params().items() if 'n_jobs' in item[0]])
-    else:
-        estimator = clf
-
-        if not standard_scaler_center and 'scaler' in estimator.get_params():
-            estimator.set_params(scaler__with_mean=False)
-
-        if len(categorical_features) != 0 and len(numerical_features) != 0:
-            estimator.set_params(
-                Preprocessing__numerical__ItemSelector__indices=
-                numerical_features)
-            estimator.set_params(
-                Preprocessing__categorical__ItemSelector__indices=
-                categorical_features)
-
     print('Running task with ID %d.' % task_id)
     print('Arguments: random search iterations: %d, inner CV folds %d, '
-          'n parallel jobs: %d, seed %d' %
-          (n_iter, n_folds_inner_cv, n_jobs, seed))
+          'n parallel jobs: %d, seed %d' %(n_iter, n_folds_inner_cv, n_jobs, seed))
     print('Model: %s' % str(estimator))
+    flow = openml.flows.sklearn_to_flow(estimator)
+    flow.tags.append('study_14')
 
     import time
     start_time = time.time()
+
 
     # TODO generate a flow first
     if scheduler_host is None:
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', module='sklearn\.externals\.joblib\.parallel')
-            run = openml.runs.run_task(task, estimator)
-
-        try:
-            print(util.report(estimator.cv_results_))
-        except:
-            pass
+            run = openml.runs.run_flow_on_task(task, flow)
     else:
         # Register with scikit-leran joblib since scikit-learn uses the builtin
         # version to distribute it's work
         print('Using dask parallel with host %s' % scheduler_host)
-        with sklearn.externals.joblib.parallel_backend('distributed',
-                                                       scheduler_host=scheduler_host):
-            run = openml.runs.run_task(task, estimator)
+        with sklearn.externals.joblib.parallel_backend('distributed', scheduler_host=scheduler_host):
+            run = openml.runs.run_flow_on_task(task, flow)
 
     end_time = time.time()
     print('READTHIS', estimator_name, task_id, end_time-start_time)
 
-    output_file = os.path.join(tmp_dir, '%d_%s_%d.pkl' % (
-        task_id, estimator_name, seed))
+    output_file = os.path.join(tmp_dir, '%d_%s_%d.pkl' % (task_id, estimator_name, seed))
 
     #return_code, return_value = run.publish()
     #if return_code != 200:
     #    print(return_value)
     #    exit(1)
 
-    with open(output_file, 'wb') as fh:
-        pickle.dump(run, fh)
+    # TODO: why do we need this? it crashes on
+    # AttributeError: Can't pickle local object '_run_task_get_arffcontent.<locals>.<lambda>'
+    # with open(output_file, 'wb') as fh:
+    #     pickle.dump(run, fh)
     return run
 
 
@@ -174,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('--tmp_dir', required=True, type=str)
     parser.add_argument('--n_iter_inner_loop', default=200, type=int,
                         help='Number of iterations random search.')
-    parser.add_argument('--n_folds_inner_cv', default=10, type=int,
+    parser.add_argument('--n_folds_inner_cv', default=3, type=int,
                         help='Number of folds for inner CV')
     parser.add_argument('--n_jobs', default=-1, type=int,
                         help='Number of cores used by random search. Defaults '
@@ -206,4 +131,3 @@ if __name__ == '__main__':
                    n_folds_inner_cv=n_folds_inner_cv,
                    scheduler_host=scheduler_host)
     print(run)
-
