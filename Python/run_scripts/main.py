@@ -70,17 +70,12 @@ def run_task(seed, tmp_dir, task_id, estimator_name, n_iter, n_jobs,
             run = openml.runs.run_flow_on_task(task, flow)
 
     end_time = time.time()
-    print('READTHIS', estimator_name, task_id, end_time-start_time)
-
-    output_file = os.path.join(tmp_dir, '%d_%s_%d.pkl' % (task_id, estimator_name, seed))
-
-    #return_code, return_value = run.publish()
-    #if return_code != 200:
-    #    print(return_value)
-    #    exit(1)
+    run = run.publish()
+    print('READTHIS', estimator_name, task_id, run.run_id, end_time-start_time)
 
     # TODO: why do we need this? it crashes on
     # AttributeError: Can't pickle local object '_run_task_get_arffcontent.<locals>.<lambda>'
+    # output_file = os.path.join(tmp_dir, '%d_%s_%d.pkl' % (task_id, estimator_name, seed))
     # with open(output_file, 'wb') as fh:
     #     pickle.dump(run, fh)
     return run
