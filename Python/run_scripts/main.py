@@ -59,6 +59,7 @@ def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
 
     end_time = time.time()
+    run.tags.append('study_14')
     run_prime = run.publish()
     print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
 
