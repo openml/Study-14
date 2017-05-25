@@ -16,11 +16,13 @@ def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
+    num_features = task.get_X_and_y()[0].shape[1]
     indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
 
     # retrieve classifier
     classifierfactory = openmlstudy14.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)
-    estimator = classifierfactory.get_flow_mapping()[estimator_name](indices)
+    estimator = classifierfactory.get_flow_mapping()[estimator_name](indices,
+                                                                     num_features=num_features)
 
     print('Running task with ID %d.' % task_id)
     print('Arguments: random search iterations: %d, inner CV folds %d, '
@@ -83,7 +85,7 @@ if __name__ == '__main__':
                         help='Number of cores used by random search. Defaults '
                              'to all (-1).')
     parser.add_argument('--openml_server', default=openml.config.server)
-    parser.add_argument('--cache_dir', default=openml.config.cachedir)
+    parser.add_argument('--cache_dir', default=None)
     parser.add_argument('--scheduler_file', default=None, type=str,
                         help='Use distributed backend if specified')
 
@@ -92,7 +94,9 @@ if __name__ == '__main__':
     openml_server = args.openml_server
     openml.config.server = openml_server
     cache_dir = args.cache_dir
-    openml.config.set_cache_directory(cache_dir)
+
+    if cache_dir is not None:
+        openml.config.set_cache_directory(cache_dir)
 
     seed = args.seed
     classifier = args.classifier
