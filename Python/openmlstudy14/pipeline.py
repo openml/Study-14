@@ -96,7 +96,7 @@ class EstimatorFactory():
     def get_gradient_boosting(self, nominal_indices, **kwargs):
         param_dist = {'Estimator__learning_rate': loguniform(base=10, low=10**-4, high=10**-1),
                       'Estimator__max_depth': scipy.stats.randint(1, 5 + 1),
-                      'Estimator__n_estimators': scipy.stats.randint(500, 1001)}
+                      'Estimator__n_estimators': scipy.stats.randint(500, 10001)}
         boosting = self._get_pipeline(nominal_indices, GradientBoostingClassifier())
         random_search = RandomizedSearchCV(boosting,
                                            param_dist,
