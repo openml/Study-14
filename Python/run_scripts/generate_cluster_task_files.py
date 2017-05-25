@@ -11,6 +11,8 @@ import openml
 parser = argparse.ArgumentParser()
 parser.add_argument('--jobfile-directory', type=str, required=True)
 parser.add_argument('--n-workers', type=int, required=True)
+parser.add_argument('--openml-server', type=str, default=None)
+parser.add_argument('--cache-dir', type=str, default=None)
 args = parser.parse_args()
 jobfile_directory = args.jobfile_directory
 try:
@@ -18,6 +20,12 @@ try:
 except:
     pass
 n_workers = args.n_workers
+openml_server = args.openml_server
+if openml_server is not None:
+    openml.config.server = openml_server
+cache_dir = args.cache_dir
+if cache_dir is not None:
+    openml.config.set_cache_directory(cache_dir)
 
 ################################################################################
 # Constants
@@ -61,6 +69,10 @@ runtime_probes = read_csv_file(runtime_probes_file)
 scheduler_command = 'dask-scheduler --scheduler-file %s'
 main_command = 'python ' + os.path.join(this_file_path, 'main.py') + \
                ' --scheduler_file %s --seed 1 --task_id %d --classifier %s'
+if openml_server is not None:
+    main_command += (' --openml_server %s' % openml_server)
+if cache_dir is not None:
+    main_command += (' --cache_dir %s' % cache_dir)
 worker_command = 'dask-worker --nprocs 1 --nthreads 1 --death-timeout %d ' \
                  '--no-nanny --scheduler-file %s'
 ################################################################################
@@ -71,10 +83,16 @@ tasks_by_size = defaultdict(list)
 # Generate all command files
 for task_id in tasks:
     for estimator_name in estimators:
-        estimated_memory_usage = memory_probes[task_id][estimator_name]
+        try:
+            estimated_memory_usage = memory_probes[task_id][estimator_name]
+        except Exception as e:
+            estimated_memory_usage = 3072
         required_memory = [ma for ma in memory_allowances
                            if ma >= (estimated_memory_usage * 1.5)][0]
-        estimated_max_runtime = runtime_probes[task_id][estimator_name]
+        try:
+            estimated_max_runtime = runtime_probes[task_id][estimator_name]
+        except Exception as e:
+            estimated_max_runtime = 3600
         estimated_runtime = num_outer_folds * \
                             (num_random_search * num_inner_folds /
                              max_parallel_jobs + 1) * estimated_max_runtime
@@ -83,7 +101,6 @@ for task_id in tasks:
         required_cluster_time = time_allowances[-1] if len(
             required_cluster_time) == 0 else required_cluster_time[0]
         tasks_by_size[(required_cluster_time, required_memory)].append((task_id, estimator_name))
-
 
 
 for tbs in sorted(tasks_by_size):
