@@ -92,7 +92,7 @@ for task_id in tasks:
         try:
             estimated_max_runtime = runtime_probes[task_id][estimator_name]
         except Exception as e:
-            estimated_max_runtime = 3600
+            estimated_max_runtime = 1
         estimated_runtime = num_outer_folds * \
                             (num_random_search * num_inner_folds /
                              max_parallel_jobs + 1) * estimated_max_runtime
