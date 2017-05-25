@@ -141,6 +141,9 @@ class ConditionalImputer(Imputer):
                     self.categorical_features_implied.append(iAtt)
                     self.statistics_[iAtt] = statistics_nominal[iAtt]
 
+        if self.fill_empty is not None:
+            self.statistics_[np.isnan(self.statistics_)] = self.fill_empty
+
         return self
 
     def transform(self, X):
@@ -177,15 +180,6 @@ class ConditionalImputer(Imputer):
                                              self.strategy,
                                              self.missing_values,
                                              self.axis)
-
-        # impute completelly empty columns with constant, if
-        # `fill_empty' parameter was set
-        if self.fill_empty is not None:
-            if sparse.issparse(X):
-                X = X.toarray()
-            empty_mask = np.all(_get_mask(X, self.missing_values),
-                                axis=self.axis)
-            statistics[empty_mask] = self.fill_empty
 
         # Delete the invalid rows/columns
         invalid_mask = np.isnan(statistics)

@@ -1,7 +1,7 @@
 import openml, math, collections
 import numpy as np
 from openml.testing import TestBase
-from openml.utils.preprocessing import ConditionalImputer
+from openmlstudy14.preprocessing import ConditionalImputer
 
 
 class OpenMLTaskTest(TestBase):
