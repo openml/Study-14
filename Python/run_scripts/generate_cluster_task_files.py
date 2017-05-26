@@ -106,18 +106,22 @@ for task_id in tasks:
 for tbs in sorted(tasks_by_size):
     required_cluster_time, required_memory = tbs
 
-    dask_scheduler_file = os.path.expanduser(os.path.join(
-        '~', '.dask_scheduler_%d_%d' % (required_cluster_time, required_memory)))
-
     jobfile = os.path.join(jobfile_directory, '%d_%d_scheduler_command.txt' %
                            (required_cluster_time, required_memory))
     with open(jobfile, 'w') as fh:
-        fh.write(scheduler_command % dask_scheduler_file)
-        fh.write('\n')
+        for job in tasks_by_size[tbs]:
+            dask_scheduler_file = os.path.expanduser(os.path.join(
+                '~', '.dask_scheduler_%d_%d_%d' % (
+                required_cluster_time, required_memory, job[0])))
+            fh.write(scheduler_command % dask_scheduler_file)
+            fh.write('\n')
 
     jobfile = os.path.join(jobfile_directory, '%d_%d.txt' % (tbs[0], tbs[1]))
     with open(jobfile, 'w') as fh:
         for job in tasks_by_size[tbs]:
+            dask_scheduler_file = os.path.expanduser(os.path.join(
+                '~', '.dask_scheduler_%d_%d_%d' % (
+                    required_cluster_time, required_memory, job[0])))
             fh.write(main_command % (dask_scheduler_file, job[0], job[1]))
             fh.write('\n')
 
@@ -125,6 +129,10 @@ for tbs in sorted(tasks_by_size):
     jobfile = os.path.join(jobfile_directory, '%d_%d_worker_commands.txt' % (
         required_cluster_time, required_memory))
     with open(jobfile, 'w') as fh:
-        for i in range(n_workers):
-            fh.write(worker_command % (3600, dask_scheduler_file))
-            fh.write('\n')
+        for job in tasks_by_size[tbs]:
+            dask_scheduler_file = os.path.expanduser(os.path.join(
+                '~', '.dask_scheduler_%d_%d_%d' % (
+                    required_cluster_time, required_memory, job[0])))
+            for i in range(n_workers):
+                fh.write(worker_command % (3600, dask_scheduler_file))
+                fh.write('\n')
