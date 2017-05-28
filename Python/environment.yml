@@ -22,11 +22,13 @@ dependencies:
 - html5lib=0.999=py36_0
 - icu=54.1=0
 - ipykernel=4.6.1=py36_0
+- ipyparallel=6.0.2=py36_0
 - ipython=6.0.0=py36_1
 - ipython_genutils=0.2.0=py36_0
 - ipywidgets=6.0.0=py36_0
 - jedi=0.10.2=py36_2
 - jinja2=2.9.6=py36_0
+- joblib=0.11=py36_0
 - jpeg=9b=0
 - jsonschema=2.6.0=py36_0
 - jupyter=1.0.0=py36_3

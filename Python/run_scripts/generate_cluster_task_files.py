@@ -66,15 +66,14 @@ runtime_probes = read_csv_file(runtime_probes_file)
 ################################################################################
 # dask distributed commands
 
-scheduler_command = 'dask-scheduler --scheduler-file %s'
+scheduler_command = 'ipcontroller --sqlitedb --ip="*" --profile="w%d_m%d"'
 main_command = 'python ' + os.path.join(this_file_path, 'main.py') + \
-               ' --scheduler_file %s --seed 1 --task_id %d --classifier %s'
+               ' --profile w%d_m%d --seed 1 --task_id %d --classifier %s'
 if openml_server is not None:
     main_command += (' --openml_server %s' % openml_server)
 if cache_dir is not None:
     main_command += (' --cache_dir %s' % cache_dir)
-worker_command = 'dask-worker --nprocs 1 --nthreads 1 --death-timeout %d ' \
-                 '--no-nanny --scheduler-file %s'
+worker_command = 'ipengine --profile="w%d_m%d"'
 ################################################################################
 
 
@@ -102,37 +101,25 @@ for task_id in tasks:
             required_cluster_time) == 0 else required_cluster_time[0]
         tasks_by_size[(required_cluster_time, required_memory)].append((task_id, estimator_name))
 
-
 for tbs in sorted(tasks_by_size):
     required_cluster_time, required_memory = tbs
 
     jobfile = os.path.join(jobfile_directory, '%d_%d_scheduler_command.txt' %
                            (required_cluster_time, required_memory))
     with open(jobfile, 'w') as fh:
-        for job in tasks_by_size[tbs]:
-            dask_scheduler_file = os.path.expanduser(os.path.join(
-                '~', '.dask_scheduler_%d_%d_%d' % (
-                required_cluster_time, required_memory, job[0])))
-            fh.write(scheduler_command % dask_scheduler_file)
-            fh.write('\n')
+        fh.write(scheduler_command % (tbs[0], tbs[1]))
+        fh.write('\n')
 
     jobfile = os.path.join(jobfile_directory, '%d_%d.txt' % (tbs[0], tbs[1]))
     with open(jobfile, 'w') as fh:
         for job in tasks_by_size[tbs]:
-            dask_scheduler_file = os.path.expanduser(os.path.join(
-                '~', '.dask_scheduler_%d_%d_%d' % (
-                    required_cluster_time, required_memory, job[0])))
-            fh.write(main_command % (dask_scheduler_file, job[0], job[1]))
+            fh.write(main_command % (tbs[0], tbs[1], job[0], job[1]))
             fh.write('\n')
 
     # lots of workers
     jobfile = os.path.join(jobfile_directory, '%d_%d_worker_commands.txt' % (
         required_cluster_time, required_memory))
     with open(jobfile, 'w') as fh:
-        for job in tasks_by_size[tbs]:
-            dask_scheduler_file = os.path.expanduser(os.path.join(
-                '~', '.dask_scheduler_%d_%d_%d' % (
-                    required_cluster_time, required_memory, job[0])))
-            for i in range(n_workers):
-                fh.write(worker_command % (3600, dask_scheduler_file))
-                fh.write('\n')
+        for i in range(n_workers):
+            fh.write(worker_command % (tbs[0], tbs[1]))
+            fh.write('\n')

@@ -1,18 +1,19 @@
 import argparse
-import time
+import os
 
 import yaml
 import openml
 import openmlstudy14.pipeline
 
-# Necessary to register the backend with joblib!
-import distributed.joblib
-import sklearn.externals.joblib
+from sklearn.externals.joblib import register_parallel_backend, parallel_backend
+
+from ipyparallel import Client
+from ipyparallel.joblib import IPythonParallelBackend
 
 
 
 def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
-             scheduler_file):
+             profile):
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
@@ -35,29 +36,34 @@ def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
     start_time = time.time()
 
     # TODO generate a flow first
-    if scheduler_file is None:
+    if profile is None:
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', module='sklearn\.externals\.joblib\.parallel')
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
     else:
-        print('Using dask parallel with scheduler file %s' % scheduler_file)
+        print('Using ipython parallel with scheduler file %s' % profile)
 
-        scheduler_host = None
         for i in range(1000):
+            profile_file = os.path.join(os.path.expanduser('~'),
+                                        '.ipython',
+                                        'profile_%s' % profile, 'security',
+                                        'ipcontroller-engine.json')
             try:
-                with open(scheduler_file) as fh:
+                with open(profile_file) as fh:
                     scheduler_information = yaml.load(fh)
-                scheduler_host = scheduler_information['address']
+                break
             except FileNotFoundError:
-                print('scheduler file %s not found. sleeping ... zzz' % scheduler_file)
+                print('scheduler file %s not found. sleeping ... zzz' % profile_file)
                 time.sleep(1)
+                continue
 
-        if scheduler_host is None:
-            raise ValueError('Could not read scheduler_host file!')
+        c = Client(profile=profile)
+        bview = c.load_balanced_view()
+        register_parallel_backend('ipyparallel',
+                                  lambda: IPythonParallelBackend(view=bview))
 
-        with sklearn.externals.joblib.parallel_backend('distributed',
-                                                       scheduler_host=scheduler_host):
+        with parallel_backend('ipyparallel'):
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
 
     end_time = time.time()
@@ -86,8 +92,8 @@ if __name__ == '__main__':
                              'to all (-1).')
     parser.add_argument('--openml_server', default=openml.config.server)
     parser.add_argument('--cache_dir', default=None)
-    parser.add_argument('--scheduler_file', default=None, type=str,
-                        help='Use distributed backend if specified')
+    parser.add_argument('--profile', default=None, type=str,
+                        help='Use ipython parallel backend if specified')
 
     args = parser.parse_args()
 
@@ -104,7 +110,7 @@ if __name__ == '__main__':
     n_folds_inner_cv = args.n_folds_inner_cv
     n_jobs = args.n_jobs
     task_id = args.task_id
-    scheduler_file = args.scheduler_file
+    profile = args.profile
 
 
     run = run_task(seed=seed,
@@ -113,5 +119,5 @@ if __name__ == '__main__':
                    n_iter=n_iter_random_search,
                    n_jobs=n_jobs,
                    n_folds_inner_cv=n_folds_inner_cv,
-                   scheduler_file=scheduler_file)
+                   profile=profile)
     print(run)
