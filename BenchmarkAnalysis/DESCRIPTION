@@ -1,0 +1,11 @@
+Package: BenchmarkAnalysis
+Title: Automated Benchmark Analysis for OpenML experiments
+Version: 0.0.0.9000
+Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Description:BenchMarksAnalysis lists a lot of tagged results on OpenML and produces some general plots.
+Depends: R (>= 3.3.2), mlr (>= 2.9), ggplot2, reshape2, checkmate, OpenML, dplyr
+Suggests: gridExtra, farff
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+BugReports: https://github.com/openml/Study-14

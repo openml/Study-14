@@ -1,22 +1,15 @@
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
-# Color blind palette (Dark2)
-# http://colorbrewer2.org/
-# ['#1b9e77','#d95f02','#7570b3']
-
-#--------------------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------------------
-
 getTasksInfoPlot = function(data) {
 
   tasks = unique(data$task.id)
  
   aux = lapply(tasks, function(task){
     sub = data[which(data$task.id == task), ]
-    max.acc = max(sub$predictive.accuracy)
-    max.auc = max(sub$area.under.roc.curve)
-    maj.prop = max(sub$perMajClass)
+    max.acc  = max(sub$predictive.accuracy,  na.rm = TRUE)
+    max.auc  = max(sub$area.under.roc.curve, na.rm = TRUE)
+    maj.prop = max(sub$per.majority.class,   na.rm = TRUE)
     ret = c(max.acc, max.auc, maj.prop)
     return(ret)
   })
@@ -35,9 +28,9 @@ getTasksInfoPlot = function(data) {
   df.final$task = as.numeric(df.final$task)
  
   g = ggplot(data=df.final, aes(x=task, y=value, group=Measure, colour=Measure, shape=Measure)) 
-  g = g + geom_point() + scale_colour_brewer(palette = "Dark2")
+  g = g + geom_point() + scale_colour_brewer(palette = "Dark2") + theme_bw()
   g = g + ylab(" Maximum value / Majority Class") + xlab("Tasks")
-  g = g + scale_x_continuous(limits = c(1, nrow(df)))
+  g = g + scale_x_continuous(limits = c(1, nrow(df)), breaks = c(1, 25, 50, 75, 100))
  
   return(g)
 }

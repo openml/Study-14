@@ -1,6 +1,8 @@
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
+# TODO: handle NAs properly
+
 # Obs: Not handling NAs values (removed from the ranking)
 
 getRanking = function(mat, descending = FALSE) {

@@ -3,11 +3,11 @@
 
 getPerfMatrix = function(data, measure = "predictive.accuracy", weighted = FALSE, w = 0.1) {
 
-  checkMeasure(measure = measure)
+  checkmate::assertChoice(x=measure, choices=AVAILABLE.MEASURES, .var.name="measure") 
   cat(paste0(" - Getting performance matrix for: ", measure, "\n"))
   
   all.learners = unique(data$flow.name)
-  all.tasks = unique(data$task.id)
+  all.tasks    = unique(data$task.id)
 
   temp = data
   mat = matrix(data = NA, nrow = length(all.tasks), ncol = length(all.learners), 
@@ -28,11 +28,11 @@ getPerfMatrix = function(data, measure = "predictive.accuracy", weighted = FALSE
     }
   }
   
-  # Removing algs with no execution (not being applied on all tasks)
+  # Removing algorithms with no executions (not being applied on all tasks)
   uniquelength = sapply(data.frame(mat), function(x) length(unique(x)))
   mat = subset(data.frame(mat), select = uniquelength > 1)
   mat[mat < 0] = 0
-
+  
   return(mat)
 }
 
