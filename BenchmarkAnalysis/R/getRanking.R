@@ -1,21 +1,27 @@
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
-# TODO: handle NAs properly
+getRanking = function(mat, measure, descending = FALSE) {
 
-# Obs: Not handling NAs values (removed from the ranking)
-
-getRanking = function(mat, descending = FALSE) {
+  checkmate::assertChoice(x=measure, choices=AVAILABLE.MEASURES, .var.name="measure") 
   
   temp = mat
   for(i in 1:nrow(mat)) {
-    ids =  which(!is.na(mat[i,]))
-    if(descending){
+    
+    if(measure == "usercpu.time.millis") {
+      ids =  which(!is.na(mat[i,]))
+    } else {
+
+    }
+
+    if(descending) {
       temp[i, ids] = rank(-mat[i,ids])
     } else {
       temp[i, ids] = rank( mat[i,ids])  
     }
   }
+
+
 
   # average ranking
   aux = lapply(1:ncol(temp), function(i) {

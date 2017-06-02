@@ -7,7 +7,13 @@ testing = function() {
 
   dir.create(path = "output/", showWarnings = FALSE)
 
-  data = getExperimentsData(tag = "study_14", n.runs = 1000) 
+  data = getExperimentsData(tag = "study_14", n.runs = 10000) 
+
+  # Several calls, this avoid memory errors
+  OpenML::populateOMLCache(data.ids = unique(data$data.id))
+  OpenML::populateOMLCache(task.id  = unique(data$task.id))
+  OpenML::populateOMLCache(flow.ids = unique(data$flow.id)) 
+  OpenML::populateOMLCache(run.ids  = unique(data$run.id))
 
   #-------------------------------------
   #  Initial plot - tasks overview
@@ -34,17 +40,11 @@ testing = function() {
   # Simple plots (runtime)
   #-------------------------------------
 
-  g3 = getSimplePlot(data = data, style = "boxplot", measure = "usercpu.time.millis")
-  # getSimplePlot(data = data, style = "violin",  measure = "usercpu.time.millis.training")
-  # getSimplePlot(data = data, style = "violin",  measure = "usercpu.time.millis.testing")
-
-  # getSimplePlot(data = data, style = "boxplot", measure = "usercpu.time.millis", landscape = TRUE)
-  # getSimplePlot(data = data, style = "violin", measure = "usercpu.time.millis", landscape = TRUE)
-  # getRuntimePlot(data = data, style = "boxplot")
+  # g3 = getSimplePlot(data = data, style = "boxplot", measure = "usercpu.time.millis")
+  # getSimplePlot(data = data, style = "violin",  measure = "usercpu.time.millis)
+  
+  # g4 = getRuntimePlot(data = data, style = "boxplot")
   # getRuntimePlot(data = data, style = "violin")
-
-
-
 
   #-------------------------------------
   #  Performance matrix structure
@@ -59,7 +59,17 @@ testing = function() {
   #  Performance matrix plots
   #-------------------------------------
 
+  scaled.mat.acc = scaleMatrix(mat = mat.acc)
 
+  g5 = getMatrixPlot(mat = scaled.mat.acc, style = "boxplot")
+  ggsave(g5, file = "output/perc_max_acc_boxplot.png", dpi = 500, width = 7, height = 2.5, units = "in")
+
+  # Another example:
+  # getMatrixPlot(mat = scaled.mat.acc, style = "violin")
+
+  g6 = getMatrixHeatMap(mat = scaled.mat.acc)
+  ggsave(g6, file = "output/perc_max_acc_heatmap.png", dpi = 500, width = 10, height = 3, units = "in")
+  
   #-------------------------------------
   #  Ranking structure
   #-------------------------------------
@@ -76,26 +86,15 @@ testing = function() {
   # getRankingHeatMap(data = rk.acc$rk)
   # getRankFrequencyPlot(rk = rk.acc, data = data, k = 5, version = "counter")  
 
-
   #-------------------------------------
+  #  Multicriteria plot
   #-------------------------------------
 
-# rk.acc   = getRanking(mat.acc, descending = TRUE)
+  # runtime vs performance (scatter, )
 
-# mat.time = getPerfMatrix(data = data, measure = "usercpu.time.millis")
-# rk.time  = getRanking(mat.time, descending = FALSE)
 
-# getRankingHeatMap(data = rk.time$rk)
+}
 
-# getRuntimePointPlots(data = data)
-
-# scaled.mat.acc = scaleMatrix(mat = mat.acc)
-
-# getMatrixBoxPlot(mat = scaled.mat.acc, prefix = "predictive accuracy", landscape = TRUE)
-
-# getMatrixViolinPlot(mat = scaled.mat.acc, prefix = "predictive accuracy", landscape = TRUE)
-
-# getMatrixHeatMap(mat = scaled.mat.acc, prefix = "predictive accuracy")
 
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------

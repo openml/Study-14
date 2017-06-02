@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
-getExperimentsData = function(tag, n.runs = 9999) {
+getExperimentsData = function(tag, n.runs = 10000) {
 
   if(is.null(tag)) {
     stop("You should specifiy a tag to get your OpenML runs!")
@@ -11,14 +11,16 @@ getExperimentsData = function(tag, n.runs = 9999) {
     stop("You should specifiy a positive integer number of runs.")
   }
 
-  # getting run results from OpenML
-  results = do.call("rbind", 
-    lapply(0:floor(n.runs/10000), function(i) {
-      return(OpenML::listOMLRunEvaluations(tag = tag, limit = 10000, offset = (10000 * i) + 1))
-    })
-  )
+  results = OpenML::listOMLRunEvaluations(tag = tag)
+
+  # # getting run results from OpenML
+  # run.results = lapply(0:floor(n.runs/10000), function(i) {
+  #   print((10000 * i) + 1)
+  #   return(OpenML::listOMLRunEvaluations(tag = tag, limit = 10000, offset = (10000 * i) + 1))
+  # })
 
   datasets = OpenML::listOMLDataSets(tag = tag)
+
   sub.datasets = dplyr::select(.data = datasets, data.id, name, number.of.features, 
     number.of.classes, majority.class.size)
   colnames(sub.datasets)[2] = "data.name"

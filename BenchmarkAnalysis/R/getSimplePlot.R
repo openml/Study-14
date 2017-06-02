@@ -44,15 +44,13 @@ getSimplePlot = function(data, measure = "predictive.accuracy", style, landscape
     g = g + scale_y_continuous(limits = c(0, 1))
   }
 
-  g = g + theme_bw()
-
   if(style == "violin") {
-    g = g + geom_violin(trim = TRUE, scale = "width", fill = "darkgray")
+    g = g + geom_violin(trim = TRUE, scale = "width", fill = "darkgrey")
     g = g + geom_boxplot(outlier.colour = "black", outlier.size = 0.5, width = 0.2, 
       fill = "white")
   } else {
     g = g + stat_boxplot(geom ='errorbar')
-    g = g + geom_boxplot(outlier.colour = "black", outlier.size = 0.5, fill = "darkgray")
+    g = g + geom_boxplot(outlier.colour = "black", outlier.size = 0.5)
   }
 
   g = g + theme(legend.position="none")
