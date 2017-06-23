@@ -16,7 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 from openmlstudy14.distributions import loguniform, loguniform_int
-from openmlstudy14.preprocessing import ConditionalImputer
+from openmlstudy14.preprocessing import ConditionalImputer, MemoryEfficientVarianceThreshold
 
 
 class EstimatorFactory():
@@ -64,7 +64,7 @@ class EstimatorFactory():
                  ('OneHotEncoder', OneHotEncoder(sparse=False,
                                                 handle_unknown='ignore',
                                                 categorical_features=nominal_indices)),
-                 ('VarianceThreshold', VarianceThreshold()),
+                 ('VarianceThreshold', MemoryEfficientVarianceThreshold()),
                  ('Estimator', sklearn_model)]
         return Pipeline(steps=steps)
 

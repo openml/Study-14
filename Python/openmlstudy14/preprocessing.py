@@ -1,4 +1,5 @@
 from sklearn.preprocessing.imputation import Imputer, _get_mask
+from sklearn.feature_selection.variance_threshold import VarianceThreshold
 
 import warnings
 import math
@@ -221,3 +222,44 @@ class ConditionalImputer(Imputer):
             X[coordinates] = values
 
         return X
+
+
+class MemoryEfficientVarianceThreshold(VarianceThreshold):
+    """Features selector that removes all low-variance features.
+
+    Subclass of ``sklearn.feature_selection.VarianceThreshold``. Differs only
+    that calls ``np.var`` column-wise instead of on the whole array and does
+    not accept any sparse matrix
+    ."""
+
+    def fit(self, X, y=None):
+        """Learn empirical variances from X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape (n_samples, n_features)
+            Sample vectors from which to compute variances.
+
+        y : any
+            Ignored. This parameter exists only for compatibility with
+            sklearn.pipeline.Pipeline.
+
+        Returns
+        -------
+        self
+        """
+        X = check_array(X)
+
+        self.variances_ = []
+        for i in range(X.shape[1]):
+            self.variances_.append(np.var(check_array(X[:, i].reshape((-1, 1)),
+                                                      dtype=np.float64)))
+        self.variances_ = np.array(self.variances_)
+
+        if np.all(self.variances_ <= self.threshold):
+            msg = "No feature in X meets the variance threshold {0:.5f}"
+            if X.shape[0] == 1:
+                msg += " (X contains only one sample)"
+            raise ValueError(msg.format(self.threshold))
+
+        return self
