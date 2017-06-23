@@ -1,19 +1,54 @@
 import argparse
 import os
 
-import yaml
-import openml
-import openmlstudy14.pipeline
-
-from sklearn.externals.joblib import register_parallel_backend, parallel_backend
-
 from ipyparallel import Client
 from ipyparallel.joblib import IPythonParallelBackend
+import numpy as np
+from sklearn.externals.joblib import register_parallel_backend, \
+    parallel_backend
+from sklearn.externals.joblib.parallel import BatchedCalls
+import yaml
 
+import openml
+import openmlstudy14.pipeline
+import openmlstudy14.util
+
+
+class NPCachingIpyParallelBackend(IPythonParallelBackend):
+    """Joblib backend which distributes numpy arrays via a shared file system."""
+
+    def __init__(self, view, tmp_dir):
+        super().__init__(view=view)
+        self.tmp_dir = tmp_dir
+        os.makedirs(self.tmp_dir, exist_ok=True)
+
+    def apply_async(self, func, callback=None):
+        assert isinstance(func, BatchedCalls)
+        calls = []
+        for batched_call in func.items:
+            f = openmlstudy14.util.CallbackFunction(batched_call[0])
+            args = list(batched_call[1])
+            kwargs = batched_call[2]
+
+            for i in range(len(args)):
+                # Save numpy arrays to disk and replace them by a dummy!
+                if isinstance(args[i], np.ndarray):
+                    args[i] = openmlstudy14.util.NumpyMock(self.tmp_dir,
+                                                           args[i])
+
+            for key, item in kwargs.items():
+                # This could easily be changed to also store numpy arrays on
+                # disk but is so far not necessary
+                if isinstance(item, np.ndarray):
+                    raise NotImplementedError(type(item))
+
+            calls.append((f, tuple(args), kwargs))
+        calls = BatchedCalls(calls)
+        return super().apply_async(func=calls, callback=callback)
 
 
 def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
-             profile):
+             profile, joblib_tmp_dir):
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
@@ -61,7 +96,8 @@ def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
         c = Client(profile=profile)
         bview = c.load_balanced_view()
         register_parallel_backend('ipyparallel',
-                                  lambda: IPythonParallelBackend(view=bview))
+                                  lambda: NPCachingIpyParallelBackend(
+                                      view=bview, tmp_dir=joblib_tmp_dir))
 
         with parallel_backend('ipyparallel'):
             run = openml.runs.run_flow_on_task(task, flow, seed=seed)
@@ -90,6 +126,10 @@ if __name__ == '__main__':
     parser.add_argument('--n_jobs', default=-1, type=int,
                         help='Number of cores used by random search. Defaults '
                              'to all (-1).')
+    parser.add_argument('--joblib-tmp-dir', default='/tmp/.ipyparallel',
+                        type=str,
+                        help='Temporary directory to store numpy arrays to. '
+                             'Must be accesible by all workers!')
     parser.add_argument('--openml_server', default=openml.config.server)
     parser.add_argument('--cache_dir', default=None)
     parser.add_argument('--profile', default=None, type=str,
@@ -111,6 +151,7 @@ if __name__ == '__main__':
     n_jobs = args.n_jobs
     task_id = args.task_id
     profile = args.profile
+    joblib_tmp_dir = args.joblib_tmp_dir
 
 
     run = run_task(seed=seed,
@@ -119,5 +160,6 @@ if __name__ == '__main__':
                    n_iter=n_iter_random_search,
                    n_jobs=n_jobs,
                    n_folds_inner_cv=n_folds_inner_cv,
-                   profile=profile)
+                   profile=profile,
+                   joblib_tmp_dir=joblib_tmp_dir)
     print(run)

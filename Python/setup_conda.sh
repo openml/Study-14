@@ -1,5 +1,5 @@
-MINICONDA_URL=https://repo.continuum.io/miniconda/Miniconda3-4.3.14-Linux-x86.sh
-INSTALLATION_DIR=~/Miniconda3-4.3.14-Linux-x86
+MINICONDA_URL=https://repo.continuum.io/miniconda/Miniconda3-4.3.14-Linux-x86_64.sh
+INSTALLATION_DIR=~/Miniconda3-4.3.14-Linux-x86_64
 ENV_NAME=openml_study14
 
 if [ ! -d "$INSTALLATION_DIR" ]; then
@@ -12,7 +12,7 @@ export PATH="$INSTALLATION_DIR/bin:$PATH"
 conda env create -f environment.yml
 source activate openml_study14
 
-pip install xmltodict==0.11.0 liac-arff==2.1.1
+pip install xmltodict==0.11.0 liac-arff==2.1.1 lockfile
 
 # TODO install latest OpenML version
 
