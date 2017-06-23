@@ -23,7 +23,7 @@ class EstimatorFactory():
 
     def __init__(self, n_folds_inner_cv=3, n_iter=200, n_jobs=-1):
         scoring = 'accuracy'
-        error_score = 0.0
+        error_score = 'raise'
         self.grid_arguments = dict(scoring=scoring,
                                    error_score=error_score,
                                    cv=n_folds_inner_cv,
