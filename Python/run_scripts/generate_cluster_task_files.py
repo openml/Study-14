@@ -13,6 +13,7 @@ parser.add_argument('--jobfile-directory', type=str, required=True)
 parser.add_argument('--n-workers', type=int, required=True)
 parser.add_argument('--openml-server', type=str, default=None)
 parser.add_argument('--cache-dir', type=str, default=None)
+parser.add_argument('--joblib-tmp-dir', type=str, default=None)
 args = parser.parse_args()
 jobfile_directory = args.jobfile_directory
 try:
@@ -26,6 +27,7 @@ if openml_server is not None:
 cache_dir = args.cache_dir
 if cache_dir is not None:
     openml.config.set_cache_directory(cache_dir)
+joblib_tmp_dir = args.joblib_tmp_dir
 
 ################################################################################
 # Constants
@@ -69,6 +71,8 @@ runtime_probes = read_csv_file(runtime_probes_file)
 scheduler_command = 'ipcontroller --sqlitedb --ip="*" --profile="w%d_m%d"'
 main_command = 'python ' + os.path.join(this_file_path, 'main.py') + \
                ' --profile w%d_m%d --seed 1 --task_id %d --classifier %s'
+if joblib_tmp_dir is not None:
+    main_command += (' --joblib-tmp-dir %s' % joblib_tmp_dir)
 if openml_server is not None:
     main_command += (' --openml_server %s' % openml_server)
 if cache_dir is not None:
