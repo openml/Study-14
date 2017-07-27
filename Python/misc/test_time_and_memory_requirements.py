@@ -34,7 +34,18 @@ for task_id in all_tasks:
     n_runs += 1
     #if n_runs > 2:
     #    break
+
     for model_name in model_names:
+
+        task = openml.tasks.get_task(task_id)
+        indices = task.get_dataset().get_features_by_type('nominal',
+                                                          [task.target_name])
+
+        # As of scikit-learn==0.18, gradient boosting and gaussian naive bayes
+        # do not work on sparse data (which is produced by the OneHotEncoder).
+        if len(indices) > 0 and model_name in ['gradient_boosting', 'naive_bayes']:
+            continue
+
         cmd = '%s %s %d' % (cmd_call, model_name, task_id)
         #print(cmd)
         pipe = subprocess.PIPE

@@ -20,9 +20,7 @@ import sklearn.pipeline
 model_name = sys.argv[1]
 task_id = int(sys.argv[2])
 
-this_directory = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(this_directory, '..', 'run_scripts'))
-import estimators
+import openmlstudy14.pipeline
 
 limit = 16000 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
@@ -42,12 +40,12 @@ models = {'decision_tree': sklearn.tree.DecisionTreeClassifier(
 
 task = openml.tasks.get_task(task_id)
 X, y = task.get_X_and_y()
-_, nominal_indices = task.get_dataset().get_data(
-    return_categorical_indicator=True)
-nominal_indices = nominal_indices[:-1]
+task = openml.tasks.get_task(task_id)
+indices = task.get_dataset().get_features_by_type('nominal',
+                                                  [task.target_name])
 
 model = models[model_name]
-steps = estimators._get_preprocessors(nominal_indices) + [('model', model)]
+steps = openmlstudy14.pipeline.EstimatorFactory._get_preprocessors(indices) + [('model', model)]
 pipeline = sklearn.pipeline.Pipeline(steps=steps)
 
 for rep in task.iterate_repeats():
