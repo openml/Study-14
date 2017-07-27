@@ -5,7 +5,7 @@ import scipy
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -57,14 +57,20 @@ class EstimatorFactory():
 
     @staticmethod
     def _get_pipeline(nominal_indices, sklearn_model):
+        if len(nominal_indices) > 0:
+            with_mean = False
+        else:
+            with_mean = True
+
         steps = [('Imputer', ConditionalImputer(strategy='median',
-                                               fill_empty=0,
-                                               categorical_features=nominal_indices,
-                                               strategy_nominal='most_frequent')),
-                 ('OneHotEncoder', OneHotEncoder(sparse=False,
-                                                handle_unknown='ignore',
-                                                categorical_features=nominal_indices)),
+                                                fill_empty=0,
+                                                categorical_features=nominal_indices,
+                                                strategy_nominal='most_frequent')),
+                 ('OneHotEncoder', OneHotEncoder(sparse=True,
+                                                 handle_unknown='ignore',
+                                                 categorical_features=nominal_indices)),
                  ('VarianceThreshold', MemoryEfficientVarianceThreshold()),
+                 ('Scaler', StandardScaler(with_mean=with_mean)),
                  ('Estimator', sklearn_model)]
         return Pipeline(steps=steps)
 
