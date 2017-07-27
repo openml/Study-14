@@ -6,6 +6,7 @@ import resource
 import sys
 import warnings
 
+import numpy as np
 import openml
 import sklearn
 import sklearn.ensemble
@@ -25,8 +26,14 @@ import openmlstudy14.pipeline
 limit = 16000 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
 
+task = openml.tasks.get_task(task_id)
+X, y = task.get_X_and_y()
+task = openml.tasks.get_task(task_id)
+indices = task.get_dataset().get_features_by_type('nominal',
+                                                  [task.target_name])
+
 models = {'decision_tree': sklearn.tree.DecisionTreeClassifier(
-    min_samples_split=2, min_samples_leaf=1),
+             min_samples_split=2, min_samples_leaf=1),
          'gradient_boosting': sklearn.ensemble.GradientBoostingClassifier(
              max_depth=5, n_estimators=10000),
          'knn': sklearn.neighbors.KNeighborsClassifier(n_neighbors=50),
@@ -35,18 +42,13 @@ models = {'decision_tree': sklearn.tree.DecisionTreeClassifier(
              hidden_layer_sizes=(2048, 2048), max_iter=1000),
          'naive_bayes': sklearn.naive_bayes.GaussianNB(),
          'random_forest': sklearn.ensemble.RandomForestClassifier(
-             n_estimators=500),
+             n_estimators=500, max_features=X.shape[1]**0.9),
          'svm': sklearn.svm.SVC()}
 
-task = openml.tasks.get_task(task_id)
-X, y = task.get_X_and_y()
-task = openml.tasks.get_task(task_id)
-indices = task.get_dataset().get_features_by_type('nominal',
-                                                  [task.target_name])
-
 model = models[model_name]
-steps = openmlstudy14.pipeline.EstimatorFactory._get_preprocessors(indices) + [('model', model)]
-pipeline = sklearn.pipeline.Pipeline(steps=steps)
+pipeline = openmlstudy14.pipeline.EstimatorFactory._get_pipeline(indices, model)
+#pipeline = sklearn.pipeline.Pipeline(steps=steps)
+print(pipeline)
 
 for rep in task.iterate_repeats():
     for fold in rep:

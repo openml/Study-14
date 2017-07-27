@@ -69,7 +69,7 @@ class EstimatorFactory():
                  ('OneHotEncoder', OneHotEncoder(sparse=True,
                                                  handle_unknown='ignore',
                                                  categorical_features=nominal_indices)),
-                 ('VarianceThreshold', MemoryEfficientVarianceThreshold()),
+                 ('VarianceThreshold', VarianceThreshold()),
                  ('Scaler', StandardScaler(with_mean=with_mean)),
                  ('Estimator', sklearn_model)]
         return Pipeline(steps=steps)
