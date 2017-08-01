@@ -1,27 +1,19 @@
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
-getRanking = function(mat, measure, descending = FALSE) {
+getRanking = function(mat, measure="predictive.accuracy", descending = TRUE) {
 
   checkmate::assertChoice(x=measure, choices=AVAILABLE.MEASURES, .var.name="measure") 
   
   temp = mat
   for(i in 1:nrow(mat)) {
-    
-    if(measure == "usercpu.time.millis") {
-      ids =  which(!is.na(mat[i,]))
-    } else {
-
-    }
-
+    x = mat[i,]
     if(descending) {
-      temp[i, ids] = rank(-mat[i,ids])
+      temp[i,] = (rank(-x, na.last = TRUE) + rev(rank(rev(-x), na.last = TRUE))) / 2
     } else {
-      temp[i, ids] = rank( mat[i,ids])  
+      temp[i,] = (rank(x, na.last = TRUE) + rev(rank(rev(x), na.last = TRUE))) / 2
     }
   }
-
-
 
   # average ranking
   aux = lapply(1:ncol(temp), function(i) {

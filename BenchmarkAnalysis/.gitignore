@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 
-../.ipynb_*
+../*.ipynb_*
+../.ipynb_checkpoints/

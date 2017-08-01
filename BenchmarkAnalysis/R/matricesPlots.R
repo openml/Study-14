@@ -33,7 +33,7 @@ getMatrixPlot = function(mat, style, prefix = NULL) {
 #--------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------
 
-getMatrixHeatMap = function(mat) {
+getMatrixHeatMap = function(mat, prefix = NULL) {
 
   mat$task = paste0("OML_Task_",rownames(mat))
   df = melt(mat, id.vars = ncol(mat))
@@ -43,13 +43,19 @@ getMatrixHeatMap = function(mat) {
   df$algo = gsub(x = df$algo, pattern =  expression, replacement = "")
   df$task = gsub(x = df$task, pattern = "OML_Task_", replacement = "")
 
-  g = ggplot(df, aes(x = task, y = as.factor(algo), fill=percentage, colour=percentage))
-  g = g + geom_tile() + theme_bw()
-  g = g + scale_fill_gradient(low = "white", high = "red", na.value = "black", limits = c(0,1))
-  g = g + scale_colour_gradient(low = "white", high = "red", na.value = "black", limits = c(0,1))
+  # TODO: order lines according to the average value
+
+  g = ggplot(df, aes(x = task, y = as.factor(algo), fill = percentage, colour = percentage))
+  g = g + geom_tile()
+  g = g + scale_fill_gradient2(low = "red", high = "darkblue", mid = "white", #na.value = "gray", 
+    midpoint = 0.5, limits = c(0,1)) 
+  g = g + scale_colour_gradient2(low = "red", high = "darkblue", mid = "white", #na.value = "gray", 
+    midpoint = 0.5, limits = c(0,1)) 
   g = g + theme(text = element_text(size = 10))
+  g = g + theme_classic()
   g = g + xlab("OpenML task ids") + ylab("Algorithms")
   g = g + theme(axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1, size = 5))
+  g = g + labs(fill = prefix) + labs(colour = prefix)   
  
   return(g)
 }

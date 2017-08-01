@@ -11,14 +11,7 @@ getExperimentsData = function(tag, n.runs = 10000) {
     stop("You should specifiy a positive integer number of runs.")
   }
 
-  results = OpenML::listOMLRunEvaluations(tag = tag)
-
-  # # getting run results from OpenML
-  # run.results = lapply(0:floor(n.runs/10000), function(i) {
-  #   print((10000 * i) + 1)
-  #   return(OpenML::listOMLRunEvaluations(tag = tag, limit = 10000, offset = (10000 * i) + 1))
-  # })
-
+  results = OpenML::listOMLRunEvaluations(tag = tag, limit = 10000)
   datasets = OpenML::listOMLDataSets(tag = tag)
 
   sub.datasets = dplyr::select(.data = datasets, data.id, name, number.of.features, 
