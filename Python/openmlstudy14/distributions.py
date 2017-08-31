@@ -36,6 +36,9 @@ class loguniform_gen(OpenMLDistributionHelper, rv_continuous):
         self.b = high
         return (high > low) and low > 0 and high > 0 and base >= 2
 
+    def logspace(self, num):
+        return np.logspace(self.a, self.b, num=num, endpoint=True, base=self.base)
+
     def _rvs(self, base, low, high):
         low = np.log(low) / np.log(base)
         high = np.log(high) / np.log(base)
