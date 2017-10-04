@@ -50,9 +50,10 @@ pipeline = openmlstudy14.pipeline.EstimatorFactory._get_pipeline(indices, model)
 #pipeline = sklearn.pipeline.Pipeline(steps=steps)
 print(pipeline)
 
-for rep in task.iterate_repeats():
-    for fold in rep:
-        train_indices, test_indices = fold
+n_rep, n_folds, n_samples = task.get_split_dimensions()
+for repeat in range(n_rep):
+    for fold in range(n_folds):
+        train_indices, test_indices = task.get_train_test_split_indices(fold=fold, repeat=repeat)
         trainX = X[train_indices]
         trainY = y[train_indices]
         testX = X[test_indices]
