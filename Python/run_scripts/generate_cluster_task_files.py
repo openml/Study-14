@@ -52,7 +52,7 @@ def read_csv_file(filename):
         for line in reader:
             key = int(line[''])
             del line['']
-            line = {k: float(v) for k, v in line.items()}
+            line = {k: float(v) for k, v in line.items() if v != ''}
             memory_probes[key] = line
 
     return memory_probes
@@ -89,13 +89,17 @@ for task_id in tasks:
         try:
             estimated_memory_usage = memory_probes[task_id][estimator_name]
         except Exception as e:
-            estimated_memory_usage = 3072
+            print('Skipping task %d and classifier %s' % (
+                  task_id, estimator_name))
+            continue
         required_memory = [ma for ma in memory_allowances
                            if ma >= (estimated_memory_usage * 1.5)][0]
         try:
             estimated_max_runtime = runtime_probes[task_id][estimator_name]
         except Exception as e:
-            estimated_max_runtime = 1
+            print('Skipping task %d and classifier %s' % (
+                  task_id, estimator_name))
+            continue
         estimated_runtime = num_outer_folds * \
                             (num_random_search * num_inner_folds /
                              max_parallel_jobs + 1) * estimated_max_runtime
