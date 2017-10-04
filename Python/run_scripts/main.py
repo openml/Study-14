@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import arff
 from ipyparallel import Client
 from ipyparallel.joblib import IPythonParallelBackend
 import numpy as np
@@ -48,7 +49,7 @@ class NPCachingIpyParallelBackend(IPythonParallelBackend):
 
 
 def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
-             profile, joblib_tmp_dir):
+             profile, joblib_tmp_dir, run_tmp_dir):
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
@@ -104,6 +105,21 @@ def run_task(seed, task_id, estimator_name, n_iter, n_jobs, n_folds_inner_cv,
 
     end_time = time.time()
     run.tags.append('study_14')
+
+    tmp_dir = os.path.join(run_tmp_dir, '%s_%s' % (str(task_id), estimator_name))
+    print(tmp_dir)
+    try:
+        os.makedirs(tmp_dir)
+    except Exception as e:
+        print(e)
+    run_xml = run._create_description_xml()
+    predictions_arff = arff.dumps(run._generate_arff_dict())
+
+    with open(tmp_dir + '/run.xml', 'w') as f:
+        f.write(run_xml)
+    with open(tmp_dir + '/predictions.arff', 'w') as f:
+        f.write(predictions_arff)
+
     run_prime = run.publish()
     print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
 
@@ -134,6 +150,8 @@ if __name__ == '__main__':
     parser.add_argument('--cache_dir', default=None)
     parser.add_argument('--profile', default=None, type=str,
                         help='Use ipython parallel backend if specified')
+    parser.add_argument('--run_tmp_dir', type=str, default='/tmp/',
+                        help='Store runs temporarilty.')
 
     args = parser.parse_args()
 
@@ -152,6 +170,7 @@ if __name__ == '__main__':
     task_id = args.task_id
     profile = args.profile
     joblib_tmp_dir = args.joblib_tmp_dir
+    run_tmp_dir = args.run_tmp_dir
 
 
     run = run_task(seed=seed,
@@ -161,5 +180,7 @@ if __name__ == '__main__':
                    n_jobs=n_jobs,
                    n_folds_inner_cv=n_folds_inner_cv,
                    profile=profile,
-                   joblib_tmp_dir=joblib_tmp_dir)
+                   joblib_tmp_dir=joblib_tmp_dir,
+		   run_tmp_dir=run_tmp_dir,
+    )
     print(run)

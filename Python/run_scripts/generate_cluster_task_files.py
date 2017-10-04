@@ -14,6 +14,7 @@ parser.add_argument('--n-workers', type=int, required=True)
 parser.add_argument('--openml-server', type=str, default=None)
 parser.add_argument('--cache-dir', type=str, default=None)
 parser.add_argument('--joblib-tmp-dir', type=str, default=None)
+parser.add_argument('--run-tmp-dir', type=str, default=None)
 args = parser.parse_args()
 jobfile_directory = args.jobfile_directory
 try:
@@ -28,6 +29,7 @@ cache_dir = args.cache_dir
 if cache_dir is not None:
     openml.config.set_cache_directory(cache_dir)
 joblib_tmp_dir = args.joblib_tmp_dir
+run_tmp_dir = args.run_tmp_dir
 
 ################################################################################
 # Constants
@@ -77,6 +79,8 @@ if openml_server is not None:
     main_command += (' --openml_server %s' % openml_server)
 if cache_dir is not None:
     main_command += (' --cache_dir %s' % cache_dir)
+if run_tmp_dir is not None:
+    main_command += (' --run_tmp_dir %s' % run_tmp_dir)
 worker_command = 'ipengine --profile="w%d_m%d"'
 ################################################################################
 
