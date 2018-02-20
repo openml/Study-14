@@ -1,5 +1,6 @@
 
 from openmlstudy14.pipeline import EstimatorFactory
+from openmlstudy14.distributions import loguniform, loguniform_int
 
 import unittest
 import openml
@@ -44,3 +45,13 @@ class OpenMLTaskTest(unittest.TestCase):
         flow = openml.flows.get_flow(flow.flow_id)
         downloaded_flow_id = openml.flows.flow_exists(flow.name, flow.external_version)
         self.assertEquals(downloaded_flow_id, flow.flow_id)
+
+    def test_serialize_complex_param_grid(self):
+        # JvR: this unit test seems to fail..
+        # TODO: FIXME
+        parameter_grid = {'n_estimators': [1, 5, 10, 100],
+                          'learning_rate': loguniform(base=2, low=0.01, high=0.99),
+                          'base_estimator__max_depth': loguniform_int(base=2, low=1, high=16)}
+        serialized = openml.flows.sklearn_to_flow(parameter_grid)
+        deserialized = dict(openml.flows.flow_to_sklearn(serialized))
+        self.assertDictEqual(parameter_grid, deserialized)
