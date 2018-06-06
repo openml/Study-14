@@ -24,7 +24,7 @@ import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
 public class Run {
 	
-	private static MultiSearch getRandomSearchSetup(Classifier baseclassifier, AbstractParameter[] searchParameters, Integer numIterations) throws Exception {
+	private static MultiSearch getRandomSearchSetup(Classifier baseclassifier, AbstractParameter[] searchParameters, Integer numIterations, Integer numExecutionSlots) throws Exception {
 		Filter[] filter = new Filter[3];
 		filter[0] = new ReplaceMissingValues();
 		filter[1] = new RemoveUseless();
@@ -38,6 +38,7 @@ public class Run {
 		classifier.setClassifier(baseclassifier);
 		
 		RandomSearch randomSearchAlgorithm = new RandomSearch();
+		randomSearchAlgorithm.setNumExecutionSlots(numExecutionSlots);
 		randomSearchAlgorithm.setNumIterations(numIterations);
 		randomSearchAlgorithm.setSearchSpaceNumFolds(3);
 		
@@ -51,7 +52,7 @@ public class Run {
 		return search;
 	}
 	
-	private static Classifier getRandomSearchSVM(Integer numIterations) throws Exception {
+	private static Classifier getRandomSearchSVM(Integer numIterations, Integer numExecutionSlots) throws Exception {
 		SMO baseclassifier = new SMO();
 		baseclassifier.setKernel(new RBFKernel());
 		
@@ -73,10 +74,10 @@ public class Run {
 		
 		AbstractParameter[] searchParameters = {gamma, complexity};
 		
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations);
+		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
 	}
 	
-	public static MultiSearch getRandomSearchGB(Integer numIterations) throws Exception {
+	public static MultiSearch getRandomSearchGB(Integer numIterations, Integer numExecutionSlots) throws Exception {
 		LogitBoost baseclassifier = new LogitBoost();
 		baseclassifier.setClassifier(new REPTree());
 		
@@ -107,7 +108,7 @@ public class Run {
 		
 		AbstractParameter[] searchParameters = {numGBIterations, treeDepth, shrinkage};
 
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations);
+		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -116,12 +117,13 @@ public class Run {
 		String function = args[0];
 		Integer task_id = Integer.parseInt(args[1]);
 		Integer numIterations = Integer.parseInt(args[2]);
+		Integer numExecutionSlots = Integer.parseInt(args[3]);
 		Classifier clf;
 		
 		if (function.equals("svm")) {
-			clf = getRandomSearchSVM(numIterations);
+			clf = getRandomSearchSVM(numIterations, numExecutionSlots);
 		} else if (function.equals("gb")) {
-			clf = getRandomSearchGB(numIterations);
+			clf = getRandomSearchGB(numIterations, numExecutionSlots);
 		} else {
 			throw new Exception("Unknown classifier option: " + function);
 		}
