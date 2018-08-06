@@ -6,6 +6,7 @@ import sys
 #sys.path.append('/home/feurerm/projects/openml/Study-14/PythonV2/')
 sys.path.append(this_dir)
 
+import numpy as np
 import openml
 import openmlstudy99.pipeline
 
@@ -24,6 +25,17 @@ def run_task(
     task = openml.tasks.get_task(task_id)
     num_features = task.get_X_and_y()[0].shape[1]
     indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
+
+    # Check number of levels (for categorical features)
+    dataset = task.get_dataset()
+    X = dataset.get_data()
+    total_num_categories = 0
+    for cat_index in indices:
+        total_num_categories += np.max(X[:, cat_index])
+    if total_num_categories > 5000:
+        raise ValueError('Dataset not supported by study 99!')
+    del X
+    del dataset
 
     # retrieve classifier
     classifierfactory = openmlstudy99.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)

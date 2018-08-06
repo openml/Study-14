@@ -1,6 +1,7 @@
 import sys
 sys.path.append('..')
 import main
+import openmlstudy99.pipeline
 
 import openml
 
@@ -9,7 +10,7 @@ openml.config.server = server
 cache_dir = "/tmp/openml_study99"
 
 
-for classifier in main.supported_classifiers:
+for classifier in openmlstudy99.pipeline.supported_classifiers:
     for task_id in [577, 307, 391, 565, 53]:
         run = main.run_task(
             seed=1,
