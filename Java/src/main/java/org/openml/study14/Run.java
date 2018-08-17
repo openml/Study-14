@@ -27,6 +27,8 @@ public class Run {
 			clf = ClassifierFactory.getRandomSearchGB(numIterations, numExecutionSlots);
 		} else if (function.equals("dt")) {
 			clf = ClassifierFactory.getRandomSearchDecisionTree(numIterations, numExecutionSlots);
+		} else if (function.equals("rf")) {
+			clf = ClassifierFactory.getRandomSearchRandomForest(numIterations, numExecutionSlots);
 		} else if (function.equals("knn")) {
 			clf = ClassifierFactory.getRandomSearchKnn(numIterations, numExecutionSlots);
 		} else if (function.equals("logistic")) {

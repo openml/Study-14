@@ -13,6 +13,7 @@ import weka.classifiers.meta.MultiSearch;
 import weka.classifiers.meta.multisearch.RandomSearch;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.REPTree;
+import weka.classifiers.trees.RandomForest;
 import weka.core.setupgenerator.AbstractParameter;
 import weka.core.setupgenerator.ListParameter;
 import weka.core.setupgenerator.MLPLayersParameter;
@@ -74,6 +75,23 @@ public class ClassifierFactory {
 		complexity.setStep(1);
 		
 		AbstractParameter[] searchParameters = {gamma, complexity};
+		
+		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+	}
+
+	
+	public static Classifier getRandomSearchRandomForest(Integer numIterations, Integer numExecutionSlots) throws Exception {
+		RandomForest baseclassifier = new RandomForest();
+		
+		MathParameter numFeatures = new MathParameter();
+		numFeatures.setProperty("classifier.numFeatures");
+		numFeatures.setBase(1);
+		numFeatures.setExpression("I");
+		numFeatures.setMin(0.1);
+		numFeatures.setMax(0.9);
+		numFeatures.setStep(0.1);
+		
+		AbstractParameter[] searchParameters = {numFeatures};
 		
 		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
 	}
