@@ -1,7 +1,9 @@
 package org.openml.study14;
 
 import weka.classifiers.Classifier;
+import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.functions.Logistic;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.SMO;
 import weka.classifiers.functions.supportVector.RBFKernel;
 import weka.classifiers.lazy.IBk;
@@ -12,6 +14,8 @@ import weka.classifiers.meta.multisearch.RandomSearch;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.REPTree;
 import weka.core.setupgenerator.AbstractParameter;
+import weka.core.setupgenerator.ListParameter;
+import weka.core.setupgenerator.MLPLayersParameter;
 import weka.core.setupgenerator.MathParameter;
 import weka.filters.Filter;
 import weka.filters.MultiFilter;
@@ -161,5 +165,67 @@ public class ClassifierFactory {
 
 		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
 	}
+	
 
+	public static MultiSearch getRandomSearchNeuralNetwork(Integer numIterations, Integer numExecutionSlots) throws Exception {
+		MultilayerPerceptron baseclassifier = new MultilayerPerceptron();
+
+		MLPLayersParameter hiddenlayers = new MLPLayersParameter();
+		hiddenlayers.setProperty("classifier.hiddenLayers");
+		hiddenlayers.setMinLayers(1);
+		hiddenlayers.setMaxLayers(2);
+		hiddenlayers.setMinLayerSize(32);
+		hiddenlayers.setMaxLayerSize(512);
+
+		MathParameter learningRate = new MathParameter();
+		learningRate.setProperty("classifier.learningRate");
+		learningRate.setBase(10);
+		learningRate.setExpression("pow(BASE,I)");
+		learningRate.setMin(-5);
+		learningRate.setMax(0);
+		learningRate.setStep(1);
+
+		ListParameter decay = new ListParameter();
+		decay.setProperty("classifier.decay");
+		decay.setList("false true");
+		
+
+		MathParameter epochs = new MathParameter();
+		epochs.setProperty("classifier.trainingTime");
+		epochs.setBase(1);
+		epochs.setExpression("I");
+		epochs.setMin(2);
+		epochs.setMax(50);
+		epochs.setStep(1);
+
+		MathParameter momentum = new MathParameter();
+		momentum.setProperty("classifier.momentum");
+		momentum.setBase(1);
+		momentum.setExpression("I");
+		momentum.setMin(0.1);
+		momentum.setMax(0.9);
+		momentum.setStep(0.1);
+		
+		AbstractParameter[] searchParameters = {hiddenlayers, learningRate, decay, epochs, momentum};
+		
+		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+	}
+	
+	public static FilteredClassifier getRandomSearchNaiveBayes(Integer numIterations, Integer numExecutionSlots) throws Exception {
+		NaiveBayes nb = new NaiveBayes();
+		
+		Filter[] filter = new Filter[3];
+		filter[0] = new ReplaceMissingValues();
+		filter[1] = new RemoveUseless();
+		filter[2] = new Normalize();
+		
+		MultiFilter multifilter = new MultiFilter();
+		multifilter.setFilters(filter);
+		
+		FilteredClassifier classifier = new FilteredClassifier();
+		classifier.setFilter(multifilter);
+		classifier.setClassifier(nb);
+		
+		return classifier;
+	}
 }

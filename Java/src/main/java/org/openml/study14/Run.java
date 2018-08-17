@@ -31,6 +31,10 @@ public class Run {
 			clf = ClassifierFactory.getRandomSearchKnn(numIterations, numExecutionSlots);
 		} else if (function.equals("logistic")) {
 			clf = ClassifierFactory.getRandomSearchLogistic(numIterations, numExecutionSlots);
+		} else if (function.equals("nn")) {
+			clf = ClassifierFactory.getRandomSearchNeuralNetwork(numIterations, numExecutionSlots);
+		} else if (function.equals("nb")) {
+			clf = ClassifierFactory.getRandomSearchNaiveBayes(numIterations, numExecutionSlots);
 		} else {
 			throw new Exception("Unknown classifier option: " + function);
 		}
