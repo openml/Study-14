@@ -121,15 +121,9 @@
     </dependency>
     
     <dependency>
-      <groupId>nz.ac.waikato.cms.weka</groupId>
-      <artifactId>weka-dev</artifactId>
-      <version>[3.9.0,)</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>com.github.fracpete</groupId>
-      <artifactId>multisearch-weka-package</artifactId>
-      <version>[2017.3.28,)</version>
+      <groupId>org.openml</groupId>
+      <artifactId>openmlweka</artifactId>
+      <version>0.9.6-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
