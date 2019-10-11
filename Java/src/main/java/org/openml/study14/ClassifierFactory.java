@@ -76,7 +76,11 @@ public class ClassifierFactory {
 		
 		AbstractParameter[] searchParameters = {gamma, complexity};
 		
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 
 	
@@ -93,7 +97,11 @@ public class ClassifierFactory {
 		
 		AbstractParameter[] searchParameters = {numFeatures};
 		
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 	
 	public static Classifier getRandomSearchDecisionTree(Integer numIterations, Integer numExecutionSlots) throws Exception {
@@ -116,7 +124,12 @@ public class ClassifierFactory {
 		maxDepth.setStep(1);
 		
 		AbstractParameter[] searchParameters = {numFeatures, maxDepth};
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 	
 	public static Classifier getRandomSearchLogistic(Integer numIterations, Integer numExecutionSlots) throws Exception {
@@ -131,7 +144,12 @@ public class ClassifierFactory {
 		ridge.setStep(1);
 		
 		AbstractParameter[] searchParameters = {ridge};
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 	
 	public static Classifier getRandomSearchKnn(Integer numIterations, Integer numExecutionSlots) throws Exception {
@@ -146,11 +164,16 @@ public class ClassifierFactory {
 		numNeighbours.setStep(1);
 		
 		AbstractParameter[] searchParameters = {numNeighbours};
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 		
 	
-	public static MultiSearch getRandomSearchGB(Integer numIterations, Integer numExecutionSlots) throws Exception {
+	public static Classifier getRandomSearchGB(Integer numIterations, Integer numExecutionSlots) throws Exception {
 		LogitBoost baseclassifier = new LogitBoost();
 		baseclassifier.setClassifier(new REPTree());
 		
@@ -181,11 +204,15 @@ public class ClassifierFactory {
 		
 		AbstractParameter[] searchParameters = {numGBIterations, treeDepth, shrinkage};
 
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 	
 
-	public static MultiSearch getRandomSearchNeuralNetwork(Integer numIterations, Integer numExecutionSlots) throws Exception {
+	public static Classifier getRandomSearchNeuralNetwork(Integer numIterations, Integer numExecutionSlots) throws Exception {
 		MultilayerPerceptron baseclassifier = new MultilayerPerceptron();
 
 		MLPLayersParameter hiddenlayers = new MLPLayersParameter();
@@ -226,7 +253,11 @@ public class ClassifierFactory {
 		
 		AbstractParameter[] searchParameters = {hiddenlayers, learningRate, decay, epochs, momentum};
 		
-		return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		if (numIterations == null) {
+			return baseclassifier;
+		} else {
+			return getRandomSearchSetup(baseclassifier, searchParameters, numIterations, numExecutionSlots);
+		}
 	}
 	
 	public static FilteredClassifier getRandomSearchNaiveBayes(Integer numIterations, Integer numExecutionSlots) throws Exception {

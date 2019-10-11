@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.tuple.Pair;
 import org.openml.apiconnector.io.OpenmlConnector;
 import org.openml.apiconnector.xml.Run;
+import org.openml.apiconnector.xml.Study;
 import org.openml.weka.algorithm.WekaConfig;
 import org.openml.weka.experiment.RunOpenmlJob;
 
@@ -21,17 +22,26 @@ public class BootstrapExperiment {
 		OpenmlConnector openml = new OpenmlConnector(wekaconfig.getServer(), wekaconfig.getApiKey());
 		System.out.println(wekaconfig);
 
-		if (args.length < 4) {
+		if (args.length < 3) {
 			throw new Exception(
-					"Program requires at least 4 CLI arguments: classifierName <str>, " + 
-					"task_id <int>, numIterations <int>, numExecutionSlots <int>");
+					"Program requires at least 3 CLI arguments: classifierName <str>, benchmark_suite <str>, task_idx <int>");
 		}
+		
 		String classifierName = args[0];
-		Integer taskId = Integer.parseInt(args[1]);
-		Integer numIterations = Integer.parseInt(args[2]);
-		Integer numExecutionSlots = Integer.parseInt(args[3]);
+		Study study = openml.studyGet(args[1], "tasks");
+		Integer taskIdx = Integer.parseInt(args[2]);
+		Integer taskId = study.getTasks()[taskIdx];
+		Integer numIterations = null;
+		Integer numExecutionSlots = null;
 		Classifier clf;
 
+		if (args.length > 3) {
+			numIterations = Integer.parseInt(args[3]);
+		}
+		if (args.length > 4) {
+			numExecutionSlots = Integer.parseInt(args[4]);
+		}
+		
 		if (classifierName.equals("svm")) {
 			clf = ClassifierFactory.getRandomSearchSVM(numIterations, numExecutionSlots);
 		} else if (classifierName.equals("gb")) {
@@ -54,6 +64,8 @@ public class BootstrapExperiment {
 
 		Pair<Integer, Run> result = RunOpenmlJob.executeTask(openml, wekaconfig, taskId, clf);
 		Integer runId = result.getLeft();
+		
 		openml.runTag(runId, "ReproducibleBenchmark");
+		System.out.println("Run id: " + runId);
 	}
 }

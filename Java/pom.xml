@@ -123,7 +123,7 @@
     <dependency>
       <groupId>org.openml</groupId>
       <artifactId>openmlweka</artifactId>
-      <version>0.9.6-SNAPSHOT</version>
+      <version>0.9.6</version>
     </dependency>
   </dependencies>
 
