@@ -12,10 +12,7 @@
 
 And now run them all!
 
-    n_lines=`wc -l commands.txt | cut -f 1 -d ' '`
-    for i in `seq 1 1 $n_lines`
-    do 
-        cmd=`head commands.txt -n $i | tail -1`
-        echo $cmd
-        exec $cmd
-    done
+    while read LINE
+    do
+        sem -j 1 --id openml $LINE
+    done < "/tmp/commands.txt"

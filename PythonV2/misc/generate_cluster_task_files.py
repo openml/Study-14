@@ -11,11 +11,14 @@ import openml
 
 ################################################################################
 # Command line parsing
+# Arguments for tests:
+# --output-file /tmp/commands.txt --openml-server https://test.openml.org/api/v1/xml --run-tmp-dir /tmp/study99/ --n-jobs 4 --tasks 1 7 13 19
 parser = argparse.ArgumentParser()
 parser.add_argument('--output-file', type=str, required=True)
 parser.add_argument('--openml-server', type=str, default=None)
 parser.add_argument('--run-tmp-dir', type=str, default=None)
 parser.add_argument('--n-jobs', type=int, default=-1)
+parser.add_argument('--tasks', type=int, nargs='+', default=None)
 args = parser.parse_args()
 output_file = args.output_file
 openml_server = args.openml_server
@@ -23,6 +26,7 @@ if openml_server is not None:
     openml.config.server = openml_server
 run_tmp_dir = args.run_tmp_dir
 n_jobs = args.n_jobs
+tasks = args.tasks
 
 ################################################################################
 # Constants
@@ -48,12 +52,14 @@ if run_tmp_dir is not None:
     main_command += (' --run-tmp-dir %s' % run_tmp_dir)
 
 ################################################################################
+print(tasks)
+if tasks is None:
+    tasks = list(openml.tasks.list_tasks(tag='study_99').keys())
 
-tasks = []
+jobs = []
 # Generate all command files
-for task_id in list(openml.tasks.list_tasks(tag='study_99').keys())[:10]:
+for task_id in tasks:
     for estimator_name in supported_classifiers:
-
         if (
             openml.tasks.get_task(task_id).get_dataset().format.lower() == 'sparse_arff'
             and estimator_name == 'naive_bayes'
@@ -61,10 +67,10 @@ for task_id in list(openml.tasks.list_tasks(tag='study_99').keys())[:10]:
             continue
         else:
             print(task_id, estimator_name)
-            tasks.append((estimator_name, task_id))
+            jobs.append((estimator_name, task_id))
 
 with open(output_file, 'w') as fh:
-    for estimator_name, task_id in sorted(tasks):
+    for estimator_name, task_id in sorted(jobs):
         fh.write(main_command % (task_id, estimator_name))
         fh.write('\n')
 

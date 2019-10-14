@@ -1,5 +1,6 @@
 import argparse
 import os
+from typing import cast
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 import sys
@@ -8,6 +9,7 @@ sys.path.append(this_dir)
 
 import numpy as np
 import openml
+import openml.extensions.sklearn
 import openmlstudy99.pipeline
 
 
@@ -23,21 +25,22 @@ def run_task(
 
     # retrieve dataset / task
     task = openml.tasks.get_task(task_id)
+    task = cast(openml.tasks.OpenMLClassificationTask, task)
     num_features = task.get_X_and_y()[0].shape[1]
-    indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
 
     # Check number of levels (for categorical features)
     dataset = task.get_dataset()
-    X = dataset.get_data()
+    X, _, _, _ = dataset.get_data()
     total_num_categories = 0
-    for cat_index in indices:
-        total_num_categories += np.max(X[:, cat_index])
+    for col_name, col in X.select_dtypes('category').iteritems():
+        total_num_categories += len(col.dtype.categories)
     if total_num_categories > 5000:
         raise ValueError('Dataset not supported by study 99!')
     del X
     del dataset
 
     # retrieve classifier
+    indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
     classifierfactory = openmlstudy99.pipeline.EstimatorFactory(n_folds_inner_cv, n_iter, n_jobs)
     estimator = classifierfactory.get_flow_mapping()[estimator_name](
         indices,
@@ -48,18 +51,17 @@ def run_task(
     print('Arguments: random search iterations: %d, inner CV folds %d, '
           'n parallel jobs: %d, seed %d' %(n_iter, n_folds_inner_cv, n_jobs, seed))
     print('Model: %s' % str(estimator))
-    flow = openml.flows.sklearn_to_flow(estimator)
+    sklearn_extension = openml.extensions.sklearn.SklearnExtension()
+    flow = sklearn_extension.model_to_flow(estimator)
     print(flow.name)
     assert flow.name is not None
-    flow.tags.append('study_14')
 
     import time
     start_time = time.time()
 
-    run = openml.runs.run_flow_on_task(task, flow, seed=seed)
+    run = openml.runs.run_flow_on_task(flow, task, seed=seed)
 
     end_time = time.time()
-    run.tags.append('study_99')
 
     tmp_dir = os.path.join(run_tmp_dir, '%s_%s' % (str(task_id), estimator_name))
     print(tmp_dir)

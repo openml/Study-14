@@ -8,7 +8,6 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.preprocessing import (
     OneHotEncoder,
     StandardScaler,
-    FunctionTransformer,
 )
 from sklearn.impute import SimpleImputer, MissingIndicator
 from sklearn.naive_bayes import GaussianNB
@@ -31,15 +30,16 @@ from openmlstudy99.preprocessing import (
 
 
 supported_classifiers = [
-    #'decision_tree',
-    #'gradient_boosting',
-    #'knn',
+    'decision_tree',
+    'gradient_boosting',
+    'knn',
     'logreg',
-    #'mlp',
-    #'naive_bayes',
-    #'random_forest',
-    #'svm',
-    #'xgboost',
+    'mlp',
+    'naive_bayes',
+    'random_forest',
+    'svm',
+    'xgboost',
+    'xgboost_gbm_space',
 ]
 
 
@@ -73,6 +73,7 @@ class EstimatorFactory():
             self.get_mlp,
             self.get_knn,
             self.get_xgboost,
+            self.get_xgboost_gbm_space,
         ]
 
         self.estimator_mapping = {
@@ -85,6 +86,7 @@ class EstimatorFactory():
             'mlp': self.get_mlp,
             'knn': self.get_knn,
             'xgboost': self.get_xgboost,
+            'xgboost_gbm_space': self.get_xgboost_gbm_space
         }
 
     @staticmethod
@@ -97,35 +99,14 @@ class EstimatorFactory():
                              if i not in nominal_indices]
 
         numerical_preprocessing = ('NumericalPreprocessing', Pipeline([
-            ('SelectNumerical', NumericalFeatureSelector(
-                numerical_indices,
-            )),
-            (
-                'NumericImputationFU',
-                FeatureUnion([
-                    (
-                        'MissingIndicator',
-                        MissingIndicator(
-                            error_on_new=False
-                        ),
-                    ),
-                    (
-                        'NumericalImputer',
-                        NumericalImputer(),
-                    )
-                ])
-            ),
+            ('SelectNumerical', NumericalFeatureSelector(numerical_indices)),
+            ('NumericalImputer', NumericalImputer()),
             ('Scaler', StandardScaler(with_mean=with_mean)),
         ]))
 
         categorical_preprocessing = ('CategoricalPreprocessing', Pipeline([
-            ('SelectCategorical', CategoricalFeatureSelector(
-                nominal_indices,
-            )),
-            (
-                'CategoricalImputer',
-                CategoricalImputer()
-            ),
+            ('SelectCategorical',  CategoricalFeatureSelector(nominal_indices)),
+            ('CategoricalImputer', CategoricalImputer()),
             (
                 'OneHotEncoder',
                 OneHotEncoder(
@@ -269,8 +250,7 @@ class EstimatorFactory():
         lower = lower / num_features
         scale = scale / num_features
         param_dist = {
-            'Estimator__max_features':
-                scipy.stats.uniform(loc=lower, scale=scale)
+            'Estimator__max_features': scipy.stats.uniform(loc=lower, scale=scale),
         }
         randomforest = self._get_pipeline(
             nominal_indices,
@@ -290,7 +270,26 @@ class EstimatorFactory():
         # TODO use sklearn searchspace as the default searchspace!
 
         param_dist = {'max_depth': scipy.stats.randint(1, 11)}
-        xgb = XGBClassifier()
+        xgb = self._get_pipeline(
+            nominal_indices,
+            num_features,
+            XGBClassifier(),
+        )
+        grid_search = RandomizedSearchCV(xgb, param_dist, **self.rs_arguments)
+        return grid_search
+
+    def get_xgboost_gbm_space(self, nominal_indices, num_features):
+
+        param_dist = {
+            'Estimator__learning_rate': loguniform(base=10, low=10**-4, high=10**-1),
+            'Estimator__max_depth': scipy.stats.randint(1, 5 + 1),
+            'Estimator__n_estimators': scipy.stats.randint(500, 10001),
+        }
+        xgb = self._get_pipeline(
+            nominal_indices,
+            num_features,
+            XGBClassifier(),
+        )
         grid_search = RandomizedSearchCV(xgb, param_dist, **self.rs_arguments)
         return grid_search
 
