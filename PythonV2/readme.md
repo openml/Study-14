@@ -16,3 +16,15 @@ And now run them all!
     do
         sem -j 1 --id openml $LINE
     done < "/tmp/commands.txt"
+
+## Dask command?
+
+```bash
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export OPENMP_NUM_THREADS=1
+dask-scheduler --idle-timeout 600 --scheduler-file ~/.dask/scheduler_file
+dask-worker --nthreads 1 --nprocs 1 --memory-limit 4GB --death-timeout 600 \
+    --lifetime 600 --scheduler-file ~/.dask/scheduler_file --local-directory ~/.dask
+
+``` 

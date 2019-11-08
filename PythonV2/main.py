@@ -6,6 +6,7 @@ this_dir = os.path.abspath(os.path.dirname(__file__))
 import sys
 #sys.path.append('/home/feurerm/projects/openml/Study-14/PythonV2/')
 sys.path.append(this_dir)
+import time
 
 from dask.distributed import Client, LocalCluster
 from joblib.parallel import parallel_backend
@@ -23,6 +24,7 @@ def run_task(
     n_jobs,
     n_folds_inner_cv,
     run_tmp_dir,
+    scheduler_file,
 ):
 
     # retrieve dataset / task
@@ -53,11 +55,8 @@ def run_task(
     print('Arguments: random search iterations: %d, inner CV folds %d, '
           'n parallel jobs: %d, seed %d' %(n_iter, n_folds_inner_cv, n_jobs, seed))
     print('Model: %s' % str(estimator.__repr__(7000)))
-    sklearn_extension = openml.extensions.sklearn.SklearnExtension()
-    flow = sklearn_extension.model_to_flow(estimator)
-    print(flow.name)
-    assert flow.name is not None
 
+    if scheduler_file:
     # cluster = LocalCluster(processes=True, n_workers=4, threads_per_worker=1)
     # client = Client(
     #     address=cluster.scheduler_address,
@@ -65,16 +64,19 @@ def run_task(
     #     #n_workers=1,
     #     #threads_per_worker=1,
     # )  # create local cluster
-    # client = Client("scheduler-address:8786")  # or connect to remote cluster
-
-    import time
-    start_time = time.time()
-
-
-    run = openml.runs.run_flow_on_task(flow, task, seed=seed)
-    #run = openml.runs.run_model_on_task(model=estimator, task=task, seed=seed)
-
-    end_time = time.time()
+        with open(scheduler_file) as fh:
+            print('*' * 80)
+            print('Scheduler information')
+            print(fh.read())
+        client = Client(scheduler_file=scheduler_file)  # or connect to remote cluster
+        with parallel_backend('dask'):
+            start_time = time.time()
+            run = openml.runs.run_model_on_task(model=estimator, task=task, seed=seed)
+            end_time = time.time()
+    else:
+        start_time = time.time()
+        run = openml.runs.run_model_on_task(model=estimator, task=task, seed=seed)
+        end_time = time.time()
 
     tmp_dir = os.path.join(run_tmp_dir, '%s_%s' % (str(task_id), estimator_name))
     print(tmp_dir)
@@ -100,14 +102,17 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--classifier',
-        choices=openmlstudy99.pipeline.EstimatorFactory().estimator_mapping,
+        choices=openmlstudy99.pipeline.EstimatorFactory(
+            n_folds_inner_cv=None,
+            n_iter=None,
+        ).estimator_mapping,
         required=True,
     )
     parser.add_argument('--seed', required=True, type=int)
     parser.add_argument('--task-id', required=True, type=int)
     parser.add_argument(
         '--n-iter-inner-loop',
-        default=20,
+        default=200,
         type=int,
         help='Number of iterations random search.',
     )
@@ -131,6 +136,12 @@ if __name__ == '__main__':
         default='/tmp/',
         help='Store runs temporarilty.',
     )
+    parser.add_argument(
+        '--scheduler-file',
+        default=None,
+        type=str,
+        help='Use dask distributed backend if specified',
+    )
 
     args = parser.parse_args()
 
@@ -148,6 +159,7 @@ if __name__ == '__main__':
     n_jobs = args.n_jobs
     task_id = args.task_id
     run_tmp_dir = args.run_tmp_dir
+    scheduler_file = args.scheduler_file
 
     run = run_task(
         seed=seed,
@@ -157,6 +169,7 @@ if __name__ == '__main__':
         n_jobs=n_jobs,
         n_folds_inner_cv=n_folds_inner_cv,
         run_tmp_dir=run_tmp_dir,
+        scheduler_file=scheduler_file,
     )
 
     print(run)
