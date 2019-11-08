@@ -7,7 +7,9 @@ import sys
 #sys.path.append('/home/feurerm/projects/openml/Study-14/PythonV2/')
 sys.path.append(this_dir)
 
-import numpy as np
+from dask.distributed import Client, LocalCluster
+from joblib.parallel import parallel_backend
+
 import openml
 import openml.extensions.sklearn
 import openmlstudy99.pipeline
@@ -50,16 +52,27 @@ def run_task(
     print('Running task with ID %d.' % task_id)
     print('Arguments: random search iterations: %d, inner CV folds %d, '
           'n parallel jobs: %d, seed %d' %(n_iter, n_folds_inner_cv, n_jobs, seed))
-    print('Model: %s' % str(estimator))
+    print('Model: %s' % str(estimator.__repr__(7000)))
     sklearn_extension = openml.extensions.sklearn.SklearnExtension()
     flow = sklearn_extension.model_to_flow(estimator)
     print(flow.name)
     assert flow.name is not None
 
+    # cluster = LocalCluster(processes=True, n_workers=4, threads_per_worker=1)
+    # client = Client(
+    #     address=cluster.scheduler_address,
+    #     #processes=False,
+    #     #n_workers=1,
+    #     #threads_per_worker=1,
+    # )  # create local cluster
+    # client = Client("scheduler-address:8786")  # or connect to remote cluster
+
     import time
     start_time = time.time()
 
+
     run = openml.runs.run_flow_on_task(flow, task, seed=seed)
+    #run = openml.runs.run_model_on_task(model=estimator, task=task, seed=seed)
 
     end_time = time.time()
 
@@ -73,8 +86,8 @@ def run_task(
     # TODO disable store model functionality!
     run.to_filesystem(tmp_dir)
 
-    run_prime = run.publish()
-    print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
+    # run_prime = run.publish()
+    #print('READTHIS', estimator_name, task_id, run_prime.run_id, end_time-start_time)
 
     return run
 
@@ -87,14 +100,14 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--classifier',
-        choices=openmlstudy99.pipeline.supported_classifiers,
+        choices=openmlstudy99.pipeline.EstimatorFactory().estimator_mapping,
         required=True,
     )
     parser.add_argument('--seed', required=True, type=int)
     parser.add_argument('--task-id', required=True, type=int)
     parser.add_argument(
         '--n-iter-inner-loop',
-        default=200,
+        default=20,
         type=int,
         help='Number of iterations random search.',
     )

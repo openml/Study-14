@@ -37,28 +37,3 @@ class NumericalImputer(SimpleImputer):
         self.verbose = 0
         self.copy = True
         self.add_indicator = True
-
-
-# The following two classes allow circumventing OpenML's "only one of a flow as
-# a component' restriction (it lets us use the same part of the pipeline twice).
-class FeatureSelector(TransformerMixin, BaseEstimator):
-    def __init__(self, indices):
-        self.indices = indices
-
-    def fit(self, X, y):
-        return self
-
-    def transform(self, X):
-        return X[:, self.indices]
-
-
-class NumericalFeatureSelector(FeatureSelector):
-    """Subclass of ``openmlstudy99.preprocessing.FeatureSelector`` to circumvent OpenML's
-    limitation of one flow being only once per run (i.e. it cannot appear twice as a subflow)."""
-    pass
-
-
-class CategoricalFeatureSelector(FeatureSelector):
-    """Subclass of ``openmlstudy99.preprocessing.FeatureSelector`` to circumvent OpenML's
-    limitation of one flow being only once per run (i.e. it cannot appear twice as a subflow)."""
-    pass

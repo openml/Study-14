@@ -3,7 +3,7 @@ from scipy.stats._distn_infrastructure import rv_continuous, rv_discrete
 import scipy.stats
 
 
-class OpenMLDistributionHelper(object):
+class OpenMLDistributionHelper:
     def _cdf(self, x, *args):
         raise NotImplementedError()
 
@@ -27,45 +27,42 @@ class OpenMLDistributionHelper(object):
 
 
 class loguniform_gen(OpenMLDistributionHelper, rv_continuous):
-    def _pdf(self, x, base, low, high):
+    def _pdf(self, x, low, high):
         raise NotImplementedError()
 
-    def _argcheck(self, base, low, high):
-        self.base = base
+    def _argcheck(self, low, high):
         self.a = low
         self.b = high
-        return (high > low) and low > 0 and high > 0 and base >= 2
+        return (high > low) and low > 0 and high > 0
 
     def logspace(self, num):
-        start = np.log(self.a) / np.log(self.base)
-        stop = np.log(self.b) / np.log(self.base)
-        return np.logspace(start, stop, num=num, endpoint=True, base=self.base)
+        start = np.log(self.a)
+        stop = np.log(self.b)
+        return np.logspace(start, stop, num=num, endpoint=True)
 
-    def _rvs(self, base, low, high):
-        low = np.log(low) / np.log(base)
-        high = np.log(high) / np.log(base)
-        return np.power(self.base,
-                        self._random_state.uniform(low=low, high=high,
-                                                   size=self._size))
+    def _rvs(self, low, high):
+        low = np.log(low)
+        high = np.log(high)
+        return np.exp(self._random_state.uniform(low=low, high=high, size=self._size))
 loguniform = loguniform_gen(name='loguniform')
 
 
 class loguniform_int_gen(OpenMLDistributionHelper, rv_discrete):
-    def _pmf(self, x, base, low, high):
+    def _pmf(self, x, low, high):
         raise NotImplementedError()
 
-    def _argcheck(self, base, low, high):
-        self.base = base
+    def _argcheck(self, low, high):
         self.a = low
         self.b = high
-        return (high > low) and low >= 1 and high >= 1 and base >= 2
+        return (high > low) and low >= 1 and high >= 1
 
-    def _rvs(self, base, low, high):
+    def _rvs(self, low, high):
         assert self.a >= 1
-        low = np.log(low - 0.4999) / np.log(base)
-        high = np.log(high + 0.4999) / np.log(base)
-        return np.rint(np.power(base, self._random_state.uniform(
-            low=low, high=high, size=self._size))).astype(int)
+        low = np.log(low - 0.4999)
+        high = np.log(high + 0.4999)
+        return np.rint(
+            np.exp(self._random_state.uniform(low=low, high=high, size=self._size))
+        ).astype(int)
 loguniform_int = loguniform_int_gen(name='loguniform_int')
 
 
@@ -83,27 +80,32 @@ if __name__ == '__main__':
     assert 0.90001 >= np.max(samples) >= 0.8999, np.max(samples)
     assert 0.09999 <= np.min(samples) <= 0.1001, np.min(samples)
 
-    r = loguniform(base=2, low=2**-12, high=2**12)
+    r = loguniform(low=2**-12, high=2**12)
     samples = r.rvs(size=1000000)
     assert np.max(samples) <= 4096
     assert np.min(samples) >= 0.0000001
 
-    r = loguniform(base=10, low=1e-7, high=1e-1)
+    r = loguniform(low=2 ** -12, high=2 ** 12)
+    samples = r.rvs(size=1000000)
+    assert np.max(samples) <= 4096
+    assert np.min(samples) >= 0.0000001
+
+    r = loguniform(low=1e-7, high=1e-1)
     samples = r.rvs(size=1000000)
     assert np.max(samples) <= 0.1
     assert np.min(samples) >= 0.0000001
 
-    r = loguniform_int(base=2, low=1, high=2**12)
+    r = loguniform_int(low=1, high=2**12)
     samples = r.rvs(size=1000000)
     assert np.max(samples) == 4096
     assert np.min(samples) == 1
 
-    r = loguniform_int(base=10, low=1, high=1000)
+    r = loguniform_int(low=1, high=1000)
     samples = r.rvs(size=1000000)
     assert np.max(samples) == 1000
     assert np.min(samples) == 1
 
-    r = loguniform_int(base=300, low=300**0.1, high=300**0.9)
+    r = loguniform_int(low=300**0.1, high=300**0.9)
     samples = r.rvs(size=1000000)
     assert np.max(samples) == 170, np.max(samples)
     assert np.min(samples) == 1, np.min(samples)
