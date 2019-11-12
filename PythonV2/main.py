@@ -1,12 +1,11 @@
 import argparse
 import os
+import time
 from typing import cast
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 import sys
-#sys.path.append('/home/feurerm/projects/openml/Study-14/PythonV2/')
 sys.path.append(this_dir)
-import time
 
 from dask.distributed import Client, LocalCluster
 from joblib.parallel import parallel_backend
@@ -57,13 +56,6 @@ def run_task(
     print('Model: %s' % str(estimator.__repr__(7000)))
 
     if scheduler_file:
-    # cluster = LocalCluster(processes=True, n_workers=4, threads_per_worker=1)
-    # client = Client(
-    #     address=cluster.scheduler_address,
-    #     #processes=False,
-    #     #n_workers=1,
-    #     #threads_per_worker=1,
-    # )  # create local cluster
         with open(scheduler_file) as fh:
             print('*' * 80)
             print('Scheduler information')

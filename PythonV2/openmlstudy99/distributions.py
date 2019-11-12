@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats._distn_infrastructure import rv_continuous, rv_discrete
+from scipy._lib._util import check_random_state
 import scipy.stats
 
 
@@ -60,11 +61,90 @@ class loguniform_int_gen(OpenMLDistributionHelper, rv_discrete):
         assert self.a >= 1
         low = np.log(low - 0.4999)
         high = np.log(high + 0.4999)
+        print(self._size)
         return np.rint(
             np.exp(self._random_state.uniform(low=low, high=high, size=self._size))
         ).astype(int)
 loguniform_int = loguniform_int_gen(name='loguniform_int')
 
+
+class random_size_loguniform_int_gen(OpenMLDistributionHelper, rv_discrete):
+    def _pmf(self, x, low, high, min_size, max_size):
+        raise NotImplementedError()
+
+    def _argcheck(self, low, high, min_size, max_size):
+        self.a = low
+        self.b = high
+        return (high > low) and low >= 1 and high >= 1
+
+    # These are actually called, and should not be overwritten if you
+    # want to keep error checking.
+    def rvs(self, *args, **kwds):
+        """
+        Random variates of given type.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        scale : array_like, optional
+            Scale parameter (default=1).
+        size : int or tuple of ints, optional
+            Defining number of random variates (default is 1).
+        random_state : None or int or ``np.random.RandomState`` instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None, rely on ``self.random_state``.
+            Default is None.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of given `size`.
+
+        """
+        rndm = kwds.pop('random_state', None)
+        args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
+        cond = np.logical_and(self._argcheck(*args), (scale >= 0))
+        if not np.all(cond):
+            raise ValueError("Domain error in arguments.")
+
+        if np.all(scale == 0):
+            return loc * np.ones(size, 'd')
+
+        # extra gymnastics needed for a custom random_state
+        if rndm is not None:
+            random_state_saved = self._random_state
+            self._random_state = check_random_state(rndm)
+
+        if isinstance(size, tuple):
+            if len(size) > 0:
+                raise ValueError(size)
+            else:
+                pass
+        elif not isinstance(size, int):
+            raise ValueError(size)
+
+        low = np.log(args[0] - 0.4999)
+        high = np.log(args[1] + 0.4999)
+        size = self._random_state.randint(args[2], args[3] + 1)
+        self._size = size
+        vals = np.rint(
+            np.exp(self._random_state.uniform(low=low, high=high, size=size))
+        ).astype(int)
+
+        vals = vals * scale + loc
+
+        # do not forget to restore the _random_state
+        if rndm is not None:
+            self._random_state = random_state_saved
+
+        vals = tuple([int(val) for val in vals])
+
+        return vals
+random_size_loguniform_int = random_size_loguniform_int_gen(name='random_size_loguniform_int')
 
 if __name__ == '__main__':
     np.set_printoptions(suppress=True)
@@ -109,11 +189,4 @@ if __name__ == '__main__':
     samples = r.rvs(size=1000000)
     assert np.max(samples) == 170, np.max(samples)
     assert np.min(samples) == 1, np.min(samples)
-
-
-
-
-
-
-
 

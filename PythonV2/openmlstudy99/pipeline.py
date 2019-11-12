@@ -19,7 +19,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 
-from openmlstudy99.distributions import loguniform, loguniform_int
+from openmlstudy99.distributions import loguniform, loguniform_int, random_size_loguniform_int
 from openmlstudy99.preprocessing import CategoricalImputer, NumericalImputer
 
 
@@ -184,7 +184,12 @@ class EstimatorFactory:
         # Simplification of the search space to a single layer due to scikit-learn issue 15568
         # https://github.com/scikit-learn/scikit-learn/issues/15568
         param_dist = {
-            'Estimator__hidden_layer_sizes': loguniform_int(low=2**5, high=2**11),
+            'Estimator__hidden_layer_sizes': random_size_loguniform_int(
+                low=2**5,
+                high=2**11,
+                min_size=1,
+                max_size=2,
+            ),
             'Estimator__learning_rate_init': loguniform(low=10**-5, high=10**0),
             'Estimator__alpha': loguniform(low=10**-7, high=10**-4),
             'Estimator__momentum': scipy.stats.uniform(loc=0.1, scale=0.8),
@@ -258,7 +263,7 @@ class EstimatorFactory:
         xgb = self._get_pipeline(
             nominal_indices,
             num_features,
-            XGBClassifier(n_estimators=512),
+            XGBClassifier(n_estimators=512, n_jobs=1),
         )
         grid_search = RandomizedSearchCV(xgb, param_dist, **self.rs_arguments)
         return grid_search
