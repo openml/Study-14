@@ -56,7 +56,7 @@ indices = task.get_dataset().get_features_by_type('nominal', [task.target_name])
 
 # As of scikit-learn==0.18, gradient boosting and gaussian naive bayes
 # do not work on sparse data (which is produced by the OneHotEncoder).
-if len(indices) > 0 and model_name in ['gradient_boosting', 'naive_bayes']:
+if len(indices) > 0 and model_name in ['naive_bayes']:
     with open(output_file, 'w') as fh:
         json.dump({'possible': False}, fh)
 

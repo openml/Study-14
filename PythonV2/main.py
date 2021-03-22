@@ -61,7 +61,7 @@ def run_task(
             print('Scheduler information')
             print(fh.read())
         client = Client(scheduler_file=scheduler_file)  # or connect to remote cluster
-        with parallel_backend('dask'):
+        with parallel_backend('dask', client=client, wait_for_workers_timeout=60):
             start_time = time.time()
             run = openml.runs.run_model_on_task(model=estimator, task=task, seed=seed)
             end_time = time.time()

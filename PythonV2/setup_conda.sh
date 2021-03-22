@@ -1,9 +1,9 @@
-MINICONDA_URL=https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh
+MINICONDA_URL=https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh
 WORKSPACE=/work/ws/nemo/fr_mf1066-openml-study99-0
 if [ -d "$WORKSPACE" ]; then
-    INSTALLATION_DIR="$WORKSPACE"/Miniconda3-4.5.4-Linux-x86_64
+    INSTALLATION_DIR="$WORKSPACE"/Miniconda3-4.1.12.1-Linux-x86_64
 else
-    INSTALLATION_DIR=~/Miniconda3-4.5.4-Linux-x86_64
+    INSTALLATION_DIR=~/Miniconda3-4.7.12.1-Linux-x86_64
 fi
 ENV_NAME=openml_study99
 
@@ -15,8 +15,6 @@ fi
 source "$INSTALLATION_DIR""/etc/profile.d/conda.sh"
 
 conda activate
-# conda create -n openml_study99 -y
-# conda install numpy scipy nose requests scikit-learn==0.20.0 nbformat python-dateutil python cython -y
 conda env create -f environment.yml
 # TODO remove this installation command once the latest scikit-learn version is released!
 pip install git+https://github.com/scikit-learn/scikit-learn
